@@ -47,8 +47,24 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddScoped<IAlertStore, SqlServerAlertAdapter>();
         services.AddScoped<IIdempotencyStore, SqlServerIdempotencyAdapter>();
 
-        // Time-series adapter (in-memory for MVP)
-        services.AddSingleton<ITimeSeriesReadingsStore, InMemoryTimeSeriesAdapter>();
+        InfluxDbOptions influxOptions = InfluxDbOptions.Load(configuration);
+        services.AddSingleton(influxOptions);
+
+        if (influxOptions.Enabled)
+        {
+            if (!influxOptions.IsConfigured())
+            {
+                throw new InvalidOperationException("InfluxDb enabled but missing configuration.");
+            }
+
+            services.AddSingleton<ITimeSeriesReadingsStore, InfluxTimeSeriesAdapter>();
+            services.AddSingleton<IAlertEventsStore, InfluxAlertEventsAdapter>();
+        }
+        else
+        {
+            services.AddSingleton<ITimeSeriesReadingsStore, InMemoryTimeSeriesAdapter>();
+            services.AddSingleton<IAlertEventsStore, NoOpAlertEventsAdapter>();
+        }
 
         return services;
     }

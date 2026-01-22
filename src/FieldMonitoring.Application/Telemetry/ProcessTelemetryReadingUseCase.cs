@@ -1,4 +1,6 @@
+using FieldMonitoring.Application.Alerts;
 using FieldMonitoring.Application.Fields;
+using FieldMonitoring.Domain.Alerts;
 using FieldMonitoring.Domain.Fields;
 using FieldMonitoring.Domain.Rules;
 using FieldMonitoring.Domain.Telemetry;
@@ -14,17 +16,20 @@ public class ProcessTelemetryReadingUseCase
 {
     private readonly IIdempotencyStore _idempotencyStore;
     private readonly ITimeSeriesReadingsStore _timeSeriesStore;
+    private readonly IAlertEventsStore _alertEventsStore;
     private readonly IFieldRepository _fieldRepository;
     private readonly ILogger<ProcessTelemetryReadingUseCase> _logger;
 
     public ProcessTelemetryReadingUseCase(
         IIdempotencyStore idempotencyStore,
         ITimeSeriesReadingsStore timeSeriesStore,
+        IAlertEventsStore alertEventsStore,
         IFieldRepository fieldRepository,
         ILogger<ProcessTelemetryReadingUseCase> logger)
     {
         _idempotencyStore = idempotencyStore;
         _timeSeriesStore = timeSeriesStore;
+        _alertEventsStore = alertEventsStore;
         _fieldRepository = fieldRepository;
         _logger = logger;
     }
@@ -62,6 +67,8 @@ public class ProcessTelemetryReadingUseCase
             Field field = await _fieldRepository.GetByIdAsync(reading.FieldId, cancellationToken)
                 ?? Field.Create(reading.FieldId, reading.FarmId);
 
+            Dictionary<Guid, AlertStatus> alertStatusBefore = CaptureAlertStatuses(field);
+
             // Carrega todas as regras default habilitadas
             List<Rule> rules = new()
             {
@@ -89,6 +96,9 @@ public class ProcessTelemetryReadingUseCase
                 },
                 cancellationToken);
 
+            IReadOnlyList<AlertEvent> alertEvents = BuildAlertEvents(alertStatusBefore, field.Alerts);
+            await PublishAlertEventsAsync(alertEvents, cancellationToken);
+
             return ProcessingResult.Success();
         }
         catch (Exception ex)
@@ -97,6 +107,80 @@ public class ProcessTelemetryReadingUseCase
                 message.ReadingId, message.FieldId);
 
             return ProcessingResult.Failed($"Processing error: {ex.Message}");
+        }
+    }
+
+    private static Dictionary<Guid, AlertStatus> CaptureAlertStatuses(Field field)
+    {
+        return field.Alerts
+            .ToDictionary(alert => alert.AlertId, alert => alert.Status);
+    }
+
+    private static IReadOnlyList<AlertEvent> BuildAlertEvents(
+        IReadOnlyDictionary<Guid, AlertStatus> before,
+        IReadOnlyList<Alert> after)
+    {
+        List<AlertEvent> events = new();
+
+        foreach (Alert alert in after)
+        {
+            if (!before.TryGetValue(alert.AlertId, out AlertStatus previousStatus))
+            {
+                events.Add(CreateAlertEvent(alert));
+                continue;
+            }
+
+            if (previousStatus != alert.Status)
+            {
+                events.Add(CreateAlertEvent(alert));
+            }
+        }
+
+        return events;
+    }
+
+    private static AlertEvent CreateAlertEvent(Alert alert)
+    {
+        DateTime occurredAt = alert.Status == AlertStatus.Resolved
+            ? alert.ResolvedAt ?? DateTime.Now
+            : alert.StartedAt;
+
+        return new AlertEvent
+        {
+            AlertId = alert.AlertId,
+            FarmId = alert.FarmId,
+            FieldId = alert.FieldId,
+            AlertType = alert.AlertType,
+            Status = alert.Status,
+            Reason = alert.Reason,
+            Severity = alert.Severity,
+            OccurredAt = occurredAt
+        };
+    }
+
+    private async Task PublishAlertEventsAsync(
+        IReadOnlyList<AlertEvent> alertEvents,
+        CancellationToken cancellationToken)
+    {
+        if (alertEvents.Count == 0)
+        {
+            return;
+        }
+
+        try
+        {
+            foreach (AlertEvent alertEvent in alertEvents)
+            {
+                await _alertEventsStore.AppendAsync(alertEvent, cancellationToken);
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to publish {AlertEventCount} alert events.", alertEvents.Count);
         }
     }
 }

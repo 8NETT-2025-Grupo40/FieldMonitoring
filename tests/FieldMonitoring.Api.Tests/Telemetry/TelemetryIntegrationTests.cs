@@ -141,40 +141,4 @@ public class TelemetryIntegrationTests : IClassFixture<IntegrationTestFixture>
         readings.Select(r => r.SoilHumidity).Should().ContainInOrder(35.0, 40.0);
     }
 
-    [Fact]
-    public async Task Should_AggregateByDay_WhenRequested()
-    {
-        // Arrange
-        var today = DateTime.UtcNow.Date;
-        var messages = new[]
-        {
-            new TelemetryMessageBuilder().ForField("field-3", "farm-1").WithSoilMoisture(25.0).WithTimestamp(today.AddHours(8)).Build(),
-            new TelemetryMessageBuilder().ForField("field-3", "farm-1").WithSoilMoisture(30.0).WithTimestamp(today.AddHours(12)).Build(),
-            new TelemetryMessageBuilder().ForField("field-3", "farm-1").WithSoilMoisture(28.0).WithTimestamp(today.AddHours(16)).Build()
-        };
-
-        using (var scope = _fixture.Services.CreateScope())
-        {
-            var useCase = scope.ServiceProvider.GetRequiredService<ProcessTelemetryReadingUseCase>();
-            foreach (var msg in messages)
-            {
-                await useCase.ExecuteAsync(msg);
-            }
-        }
-
-        // Act
-        var from = today.AddDays(-1);
-        var to = today.AddDays(1);
-        var response = await _client.GetAsync($"/api/fields/field-3/history?from={from:O}&to={to:O}&aggregation=day");
-        response.EnsureSuccessStatusCode();
-
-        // Assert
-        var aggregations = await response.Content.ReadFromJsonAsync<List<ReadingAggregationDto>>();
-        aggregations.Should().NotBeNull();
-        aggregations!.Should().HaveCount(1);
-        
-        var dayAgg = aggregations[0];
-        dayAgg.MinSoilHumidity.Should().Be(25.0);
-        dayAgg.MaxSoilHumidity.Should().Be(30.0);
-    }
 }

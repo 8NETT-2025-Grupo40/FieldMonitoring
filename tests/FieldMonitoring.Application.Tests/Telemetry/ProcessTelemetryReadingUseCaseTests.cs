@@ -1,3 +1,4 @@
+using FieldMonitoring.Application.Alerts;
 using FieldMonitoring.Application.Fields;
 using FieldMonitoring.Application.Telemetry;
 using FieldMonitoring.Domain.Fields;
@@ -10,6 +11,7 @@ public class ProcessTelemetryReadingUseCaseTests
 {
     private readonly IIdempotencyStore _idempotencyStore;
     private readonly ITimeSeriesReadingsStore _timeSeriesStore;
+    private readonly IAlertEventsStore _alertEventsStore;
     private readonly IFieldRepository _fieldRepository;
     private readonly ILogger<ProcessTelemetryReadingUseCase> _logger;
     private readonly ProcessTelemetryReadingUseCase _useCase;
@@ -18,12 +20,14 @@ public class ProcessTelemetryReadingUseCaseTests
     {
         _idempotencyStore = Substitute.For<IIdempotencyStore>();
         _timeSeriesStore = Substitute.For<ITimeSeriesReadingsStore>();
+        _alertEventsStore = Substitute.For<IAlertEventsStore>();
         _fieldRepository = Substitute.For<IFieldRepository>();
         _logger = Substitute.For<ILogger<ProcessTelemetryReadingUseCase>>();
 
         _useCase = new ProcessTelemetryReadingUseCase(
             _idempotencyStore,
             _timeSeriesStore,
+            _alertEventsStore,
             _fieldRepository,
             _logger);
     }

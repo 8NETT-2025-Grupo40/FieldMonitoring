@@ -101,7 +101,6 @@ Tags são “chaves de filtro/agrupamento”. Mantenha **poucas e estáveis** pa
 
 ### 4.7 Consultas esperadas (para gráficos)
 - histórico do talhão: `fieldId` + período (`from/to`)
-- agregação por janela (hora/dia): média, mín, máx
 - última leitura por talhão (opcional — mas preferimos manter também no SQL Server)
 
 ---
@@ -285,7 +284,6 @@ Ele conversa com o mundo externo via **ports**.
 - `ITimeSeriesReadingsStore`
   - `AppendAsync(SensorReading)` - adicionar leitura
   - `GetByPeriodAsync(fieldId, from, to)` - consultar leituras brutas
-  - `GetAggregatedAsync(fieldId, from, to, interval)` - consultar com agregação (Hour/Day)
 
 **Implementação MVP:** `InMemoryTimeSeriesAdapter` (substituir por InfluxDB/MongoDB em produção)
 
@@ -383,12 +381,11 @@ Ao receber uma leitura (mensagem do SQS via `TelemetryReceivedMessage`):
   - Status atual (Normal/DryAlert)
   - StatusReason
   - Última leitura (timestamp + valores de SoilMoisture, Temperature, Rain)
-  - Contagem de alertas ativos (via `fi)
-**Endpoint:** `GET /api/fields/{fieldId}/history?from={from}&to={to}&aggregation={none|hour|day}`
+  - Contagem de alertas ativos (via `IAlertStore.CountActiveByFieldAsync`)
+**Endpoint:** `GET /api/fields/{fieldId}/history?from={from}&to={to}`
 
 **Query:** `GetFieldHistoryQuery`
-- Se `aggregation=none`: chama `ITimeSeriesReadingsStore.GetByPeriodAsync()` → retorna leituras brutas
-- Se `aggregation=hour|day`: chama `ITimeSeriesReadingsStore.GetAggregatedAsync()` → retorna agregações (média/min/max)
+- Chama `ITimeSeriesReadingsStore.GetByPeriodAsync()` → retorna leituras brutas
 
 **Fonte de dados:** Time-series DB (InMemory no MVP, InfluxDB em produção)
 **Endpoints:**
@@ -401,8 +398,7 @@ Ao receber uma leitura (mensagem do SQS via `TelemetryReceivedMessage`):
 
 **Fonte de dados:** SQL Server (`Alerts` table filtrado por `Status = Active`)
 
-**DTO retornado:** `AlertDto[]` com informações completas (AlertType, Reason, StartedAt, etc.
-- `ReadingAggregationDto[]` (agregações)
+**DTO retornado:** `AlertDto[]` com informações completas (AlertType, Reason, StartedAt, etc.)
 **DTO retornado:** `FarmOverviewDto` contendo lista de `FieldOverviewDto`
 
 ---
@@ -418,7 +414,7 @@ Fonte de dados: **SQL Server** (`FieldStatusCurrent` + `Alerts`)
 ---
 
 ### 8.3 Fluxo: histórico do talhão (API ou AMG direto)
-- query do período e agregação (hora/dia)
+- query do período
 
 Fonte de dados: **Time-series DB**
 
@@ -431,7 +427,7 @@ Status de Implementação MVP
 - [x] Field aggregate com status e estado de regra (`Fields` table)
 - [x] Criar/Resolver alertas de seca via aggregate
 - [x] Consultas para: overview / detalhe / alertas ativos
-- [x] Consulta de histórico por período (com agregação Hour/Day)
+- [x] Consulta de histórico por período
 - [x] Worker SQS consumindo mensagens `TelemetryReceived`
 - [x] API REST completa com 5 controllers (Farms, Fields, Alerts, Health, Simulation)
 - [x] EF Core com migrations (SQL Server + InMemory para testes)
@@ -455,7 +451,7 @@ Status de Implementação MVP
 
 1. **Time-series:** InMemory (MVP) → migrar para InfluxDB (produção)
 2. **Retenção do histórico:** Indefinida no InMemory → configurar 30-90 dias no InfluxDB
-3. **Agregação:** Hora e Dia implementados (enum `AggregationInterval`)
+3. **Agregação:** não aplicada no MVP
 4. **Arquitetura:** DDD com aggregate Field (sem FieldStatus separado)
 5. **Regras:** Hardcoded no MVP (`30% por 24h`)
 6. **Messaging:** AWS SQS com long polling (20s wait time)
@@ -488,7 +484,7 @@ Status de Implementação MVP
 
 **Fields:**
 - `GET /api/fields/{fieldId}` → `FieldDetailDto`
-- `GET /api/fields/{fieldId}/history?from&to&aggregation` → `ReadingDto[]` ou `ReadingAggregationDto[]`
+- `GET /api/fields/{fieldId}/history?from&to` → `ReadingDto[]`
 - `GET /api/fields/{fieldId}/alerts` → `AlertDto[]` (ativos)
 - `GET /api/fields/{fieldId}/alerts/history?from&to` → `AlertDto[]`
 
@@ -514,7 +510,7 @@ Status de Implementação MVP
 - [ ] Calcular/atualizar `FieldStatusCurrent`
 - [ ] Criar/Resolver alertas (seca)
 - [ ] Consultas para: overview / status / alertas ativos
-- [ ] Consulta de histórico por período (com agregação opcional)
+- [ ] Consulta de histórico por período
 
 ### Should (diferencial)
 - [ ] Regras configuráveis (`Rules`)
@@ -527,7 +523,7 @@ Status de Implementação MVP
 ## 11) Perguntas em aberto (decisões rápidas)
 1. **Time-series escolhido:** InfluxDB ou MongoDB time-series?
 2. **Retenção do histórico:** 30/90/180 dias no MVP?
-3. **Agregação para gráficos:** por hora é suficiente?
+3. **Agregação para gráficos:** avaliar pós-MVP
 4. **Ack de alertas:** vai existir no MVP ou fica como extra?
 
 ---

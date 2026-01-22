@@ -1,7 +1,6 @@
 using FieldMonitoring.Application.Alerts;
 using FieldMonitoring.Application.Fields;
 using FieldMonitoring.Application.Telemetry;
-using FieldMonitoring.Domain.Telemetry;
 using Microsoft.AspNetCore.Mvc;
 
 namespace FieldMonitoring.Api.Controllers;
@@ -49,35 +48,22 @@ public class FieldsController : ControllerBase
     /// <summary>
     /// Obtém histórico de leituras de um talhão.
     /// </summary>
-    /// <param name="aggregation">Intervalo de agregação: "none", "hour", ou "day".</param>
-    /// <returns>Lista de leituras ou leituras agregadas.</returns>
+    /// <returns>Lista de leituras.</returns>
     [HttpGet("{fieldId}/history")]
     [ProducesResponseType(typeof(IReadOnlyList<ReadingDto>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(IReadOnlyList<ReadingAggregationDto>), StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetHistory(
+    public async Task<ActionResult<IReadOnlyList<ReadingDto>>> GetHistory(
         string fieldId,
         [FromQuery] DateTime from,
-        [FromQuery] DateTime to,
-        [FromQuery] string aggregation = "none",
+        [FromQuery] DateTime? to,
         CancellationToken cancellationToken = default)
     {
-        AggregationInterval interval = aggregation.ToLowerInvariant() switch
+        if (!to.HasValue)
         {
-            "hour" => AggregationInterval.Hour,
-            "day" => AggregationInterval.Day,
-            _ => AggregationInterval.None
-        };
+            to = DateTime.Now;
+        }
 
-        if (interval == AggregationInterval.None)
-        {
-            IReadOnlyList<ReadingDto> readings = await _fieldHistoryQuery.ExecuteAsync(fieldId, from, to, cancellationToken);
-            return Ok(readings);
-        }
-        else
-        {
-            IReadOnlyList<ReadingAggregationDto> aggregations = await _fieldHistoryQuery.ExecuteAggregatedAsync(fieldId, from, to, interval, cancellationToken);
-            return Ok(aggregations);
-        }
+        IReadOnlyList<ReadingDto> readings = await _fieldHistoryQuery.ExecuteAsync(fieldId, from, to.Value, cancellationToken);
+        return Ok(readings);
     }
 
     /// <summary>

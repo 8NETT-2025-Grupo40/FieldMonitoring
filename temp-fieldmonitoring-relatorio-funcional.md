@@ -25,7 +25,7 @@ O **FieldMonitoring** é o “cérebro” do sistema: ele **transforma telemetri
 ### 1.3 Saídas (o que o FieldMonitoring entrega)
 Para consumo do dashboard (AMG) e do produtor:
 
-- **Histórico** de leituras por talhão e período (com opção de agregação)
+- **Histórico** de leituras por talhão e período
 - **Status atual** de cada talhão + explicação (“por quê”)
 - **Alertas ativos** e **histórico de alertas**
 - **Visões prontas** para o dashboard:
@@ -88,19 +88,6 @@ Funcionalmente, um alerta deve ter um ciclo de vida simples:
 - Quando eu solicitar o histórico entre `from` e `to`
 - Então devo receber apenas leituras dentro do período
 - E o resultado deve vir ordenado por `timestamp`
-
----
-
-### FM-03 — Agregação (resumo por hora/dia) para gráficos (**Should**)
-**Como** produtor  
-**Quero** visualizar o histórico com agregação (ex.: média por hora)  
-**Para** não sobrecarregar o dashboard e ter leitura mais clara.
-
-**Critérios de aceite**
-- Dado um período com muitas leituras
-- Quando eu solicitar agregação por “hora” (ou “dia”)
-- Então devo receber pontos agregados (ex.: média, mín, máx) por intervalo
-- E os intervalos devem cobrir todo o período solicitado
 
 ---
 

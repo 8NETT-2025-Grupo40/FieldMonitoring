@@ -27,17 +27,4 @@ public class GetFieldHistoryQuery
         return readings.Select(ReadingDto.FromSensorReading).ToList();
     }
 
-    /// <summary>
-    /// Executa a query para obter leituras agregadas.
-    /// </summary>
-    public async Task<IReadOnlyList<ReadingAggregationDto>> ExecuteAggregatedAsync(
-        string fieldId,
-        DateTime from,
-        DateTime to,
-        AggregationInterval interval,
-        CancellationToken cancellationToken = default)
-    {
-        IReadOnlyList<ReadingAggregation> aggregations = await _timeSeriesStore.GetAggregatedAsync(fieldId, from, to, interval, cancellationToken);
-        return aggregations.Select(ReadingAggregationDto.FromAggregation).ToList();
-    }
 }

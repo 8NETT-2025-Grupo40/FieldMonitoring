@@ -58,3 +58,8 @@ Use as leituras abaixo em dois timestamps separados pela janela indicada:
 - Ar umido: airHumidity 95 (limiar 90), janela 12h
 
 Recomendacao: envie as leituras em ordem cronologica para evitar efeitos de reset do ultimo timestamp valido.
+
+## Alertas no InfluxDB (MVP)
+
+- Eventos de alerta sao projetados na measurement `field_alerts` (abertura e resolucao).
+- Spec detalhada: [docs/influx-alerts-spec.md](docs/influx-alerts-spec.md)

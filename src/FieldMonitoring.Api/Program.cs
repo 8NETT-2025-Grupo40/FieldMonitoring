@@ -14,7 +14,7 @@ builder.Services.AddInfrastructureServices(builder.Configuration);
 builder.Services.AddSqsMessaging(builder.Configuration);
 
 // Adiciona autenticação e autorização com AWS Cognito
-builder.Services.AddCognitoUserAuthentication(builder.Configuration);
+//builder.Services.AddCognitoUserAuthentication(builder.Configuration);
 
 // Adiciona serviços de API
 builder.Services.AddControllers();

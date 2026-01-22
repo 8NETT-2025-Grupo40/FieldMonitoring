@@ -21,14 +21,4 @@ public interface ITimeSeriesReadingsStore
         DateTime from,
         DateTime to,
         CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// Obtém leituras agregadas de um talhão dentro de um período.
-    /// </summary>
-    Task<IReadOnlyList<ReadingAggregation>> GetAggregatedAsync(
-        string fieldId,
-        DateTime from,
-        DateTime to,
-        AggregationInterval interval,
-        CancellationToken cancellationToken = default);
 }

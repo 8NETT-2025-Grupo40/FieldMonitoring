@@ -1,4 +1,6 @@
+using FieldMonitoring.Application.Telemetry;
 using FieldMonitoring.Infrastructure.Persistence;
+using FieldMonitoring.Infrastructure.Persistence.TimeSeries;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -6,7 +8,6 @@ using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using System.Linq;
 
 namespace FieldMonitoring.Api.Tests;
 
@@ -18,12 +19,18 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
 
         builder.ConfigureAppConfiguration((_, config) =>
         {
-            var settings = new Dictionary<string, string?>
+            Dictionary<string, string?> settings = new Dictionary<string, string?>
             {
                 ["ConnectionStrings:SqlServer"] = string.Empty,
                 ["COGNITO_REGION"] = "sa-east-1",
                 ["COGNITO_USER_POOL_ID"] = "sa-east-1_test",
-                ["COGNITO_CLIENT_ID"] = TestAuthHandler.DefaultClientId
+                ["COGNITO_CLIENT_ID"] = TestAuthHandler.DefaultClientId,
+                ["InfluxDb:Enabled"] = "false",
+                ["INFLUXDB_ENABLED"] = "false",
+                ["INFLUXDB_URL"] = string.Empty,
+                ["INFLUXDB_TOKEN"] = string.Empty,
+                ["INFLUXDB_ORG"] = string.Empty,
+                ["INFLUXDB_BUCKET"] = string.Empty
             };
 
             config.AddInMemoryCollection(settings);
@@ -31,7 +38,7 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
 
         builder.ConfigureTestServices(services =>
         {
-            var descriptors = services
+            List<ServiceDescriptor> descriptors = services
                 .Where(d => d.ServiceType == typeof(DbContextOptions<FieldMonitoringDbContext>))
                 .ToList();
             foreach (var descriptor in descriptors)
@@ -43,6 +50,17 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
             {
                 options.UseInMemoryDatabase("FieldMonitoringTestDb");
             });
+
+            List<ServiceDescriptor> timeSeriesDescriptors = services
+                .Where(d => d.ServiceType == typeof(ITimeSeriesReadingsStore))
+                .ToList();
+
+            foreach (var descriptor in timeSeriesDescriptors)
+            {
+                services.Remove(descriptor);
+            }
+
+            services.AddSingleton<ITimeSeriesReadingsStore, InMemoryTimeSeriesAdapter>();
 
             services
                 .AddAuthentication(options =>
