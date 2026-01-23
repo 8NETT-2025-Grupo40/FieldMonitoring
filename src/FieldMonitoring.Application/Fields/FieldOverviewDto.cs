@@ -40,7 +40,7 @@ public sealed record FieldOverviewDto
     /// <summary>
     /// Timestamp da última leitura do sensor.
     /// </summary>
-    public DateTime? LastReadingAt { get; init; }
+    public DateTimeOffset? LastReadingAt { get; init; }
 
     /// <summary>
     /// Último percentual de umidade do solo registrado.

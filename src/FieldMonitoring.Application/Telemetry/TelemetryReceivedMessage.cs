@@ -28,9 +28,9 @@ public sealed record TelemetryReceivedMessage
     public required string FarmId { get; init; }
 
     /// <summary>
-    /// Timestamp de quando a medição foi realizada (ISO 8601).
+    /// Timestamp de quando a medição foi realizada (ISO 8601 com offset).
     /// </summary>
-    public required DateTime Timestamp { get; init; }
+    public required DateTimeOffset Timestamp { get; init; }
 
     /// <summary>
     /// Percentual de umidade do solo (0-100).

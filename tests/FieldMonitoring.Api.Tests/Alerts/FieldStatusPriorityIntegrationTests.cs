@@ -37,13 +37,13 @@ public class FieldStatusPriorityIntegrationTests : IClassFixture<IntegrationTest
                 .ForField(fieldId, "farm-1")
                 .WithAirTemperature(42.0)
                 .WithSoilMoisture(50.0) // Normal
-                .WithTimestamp(DateTime.UtcNow.AddHours(-10))
+                .WithTimestamp(DateTimeOffset.UtcNow.AddHours(-10))
                 .Build(),
             new TelemetryMessageBuilder()
                 .ForField(fieldId, "farm-1")
                 .WithAirTemperature(43.0)
                 .WithSoilMoisture(50.0)
-                .WithTimestamp(DateTime.UtcNow.AddHours(-5))
+                .WithTimestamp(DateTimeOffset.UtcNow.AddHours(-5))
                 .Build()
         };
 
@@ -68,13 +68,13 @@ public class FieldStatusPriorityIntegrationTests : IClassFixture<IntegrationTest
                 .ForField(fieldId, "farm-1")
                 .WithAirTemperature(1.0)
                 .WithSoilMoisture(50.0)
-                .WithTimestamp(DateTime.UtcNow.AddHours(-3))
+                .WithTimestamp(DateTimeOffset.UtcNow.AddHours(-3))
                 .Build(),
             new TelemetryMessageBuilder()
                 .ForField(fieldId, "farm-1")
                 .WithAirTemperature(0.5)
                 .WithSoilMoisture(50.0)
-                .WithTimestamp(DateTime.UtcNow)
+                .WithTimestamp(DateTimeOffset.UtcNow)
                 .Build()
         };
 
@@ -109,14 +109,14 @@ public class FieldStatusPriorityIntegrationTests : IClassFixture<IntegrationTest
                 .ForField(fieldId, "farm-1")
                 .WithAirTemperature(42.0) // Acima de 40°C
                 .WithSoilMoisture(25.0)   // Abaixo de 30%
-                .WithTimestamp(DateTime.UtcNow.AddHours(-25))
+                .WithTimestamp(DateTimeOffset.UtcNow.AddHours(-25))
                 .Build(),
             // Segunda leitura: mantém condições
             new TelemetryMessageBuilder()
                 .ForField(fieldId, "farm-1")
                 .WithAirTemperature(43.0)
                 .WithSoilMoisture(22.0)
-                .WithTimestamp(DateTime.UtcNow)
+                .WithTimestamp(DateTimeOffset.UtcNow)
                 .Build()
         };
 
@@ -150,13 +150,13 @@ public class FieldStatusPriorityIntegrationTests : IClassFixture<IntegrationTest
                 .ForField(fieldId, "farm-1")
                 .WithSoilMoisture(25.0)  // Abaixo de 30%
                 .WithAirHumidity(15.0)   // Abaixo de 20%
-                .WithTimestamp(DateTime.UtcNow.AddHours(-25))
+                .WithTimestamp(DateTimeOffset.UtcNow.AddHours(-25))
                 .Build(),
             new TelemetryMessageBuilder()
                 .ForField(fieldId, "farm-1")
                 .WithSoilMoisture(22.0)
                 .WithAirHumidity(18.0)
-                .WithTimestamp(DateTime.UtcNow)
+                .WithTimestamp(DateTimeOffset.UtcNow)
                 .Build()
         };
 
@@ -191,14 +191,14 @@ public class FieldStatusPriorityIntegrationTests : IClassFixture<IntegrationTest
                 .WithSoilMoisture(50.0)    // Normal
                 .WithAirTemperature(25.0)  // Normal
                 .WithAirHumidity(15.0)     // Abaixo de 20%
-                .WithTimestamp(DateTime.UtcNow.AddHours(-7))
+                .WithTimestamp(DateTimeOffset.UtcNow.AddHours(-7))
                 .Build(),
             new TelemetryMessageBuilder()
                 .ForField(fieldId, "farm-1")
                 .WithSoilMoisture(50.0)
                 .WithAirTemperature(25.0)
                 .WithAirHumidity(18.0)
-                .WithTimestamp(DateTime.UtcNow)
+                .WithTimestamp(DateTimeOffset.UtcNow)
                 .Build()
         };
 
@@ -233,7 +233,7 @@ public class FieldStatusPriorityIntegrationTests : IClassFixture<IntegrationTest
                 .WithSoilMoisture(50.0)    // Normal (>30%)
                 .WithAirTemperature(25.0)  // Normal (<40°C e >2°C)
                 .WithAirHumidity(50.0)     // Normal (>20% e <90%)
-                .WithTimestamp(DateTime.UtcNow)
+                .WithTimestamp(DateTimeOffset.UtcNow)
                 .Build()
         };
 
@@ -266,12 +266,12 @@ public class FieldStatusPriorityIntegrationTests : IClassFixture<IntegrationTest
             new TelemetryMessageBuilder()
                 .ForField(fieldId, "farm-1")
                 .WithSoilMoisture(25.0)
-                .WithTimestamp(DateTime.UtcNow.AddHours(-25))
+                .WithTimestamp(DateTimeOffset.UtcNow.AddHours(-25))
                 .Build(),
             new TelemetryMessageBuilder()
                 .ForField(fieldId, "farm-1")
                 .WithSoilMoisture(22.0)
-                .WithTimestamp(DateTime.UtcNow.AddHours(-1))
+                .WithTimestamp(DateTimeOffset.UtcNow.AddHours(-1))
                 .Build()
         };
 
@@ -293,7 +293,7 @@ public class FieldStatusPriorityIntegrationTests : IClassFixture<IntegrationTest
         var recoveryMessage = new TelemetryMessageBuilder()
             .ForField(fieldId, "farm-1")
             .WithSoilMoisture(40.0) // Normal
-            .WithTimestamp(DateTime.UtcNow)
+            .WithTimestamp(DateTimeOffset.UtcNow)
             .Build();
 
         using (var scope = _fixture.Services.CreateScope())
@@ -321,14 +321,14 @@ public class FieldStatusPriorityIntegrationTests : IClassFixture<IntegrationTest
                 .WithSoilMoisture(50.0)    // Normal
                 .WithAirTemperature(25.0)  // Normal
                 .WithAirHumidity(92.0)     // Acima de 90%
-                .WithTimestamp(DateTime.UtcNow.AddHours(-13))
+                .WithTimestamp(DateTimeOffset.UtcNow.AddHours(-13))
                 .Build(),
             new TelemetryMessageBuilder()
                 .ForField(fieldId, "farm-1")
                 .WithSoilMoisture(50.0)
                 .WithAirTemperature(25.0)
                 .WithAirHumidity(95.0)
-                .WithTimestamp(DateTime.UtcNow)
+                .WithTimestamp(DateTimeOffset.UtcNow)
                 .Build()
         };
 

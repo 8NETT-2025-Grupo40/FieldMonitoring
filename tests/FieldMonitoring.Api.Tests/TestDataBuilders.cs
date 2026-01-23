@@ -12,7 +12,7 @@ public class TelemetryMessageBuilder
     private string _sensorId = "sensor-1";
     private string _fieldId = "field-1";
     private string _farmId = "farm-1";
-    private DateTime _timestamp = DateTime.UtcNow;
+    private DateTimeOffset _timestamp = DateTimeOffset.UtcNow;
     private double _soilHumidity = 45.0;
     private double _soilTemperature = 25.0;
     private double? _airTemperature = null;
@@ -69,7 +69,7 @@ public class TelemetryMessageBuilder
         return this;
     }
 
-    public TelemetryMessageBuilder WithTimestamp(DateTime timestamp)
+    public TelemetryMessageBuilder WithTimestamp(DateTimeOffset timestamp)
     {
         _timestamp = timestamp;
         return this;

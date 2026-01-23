@@ -22,8 +22,8 @@ public interface IAlertStore
     /// </summary>
     Task<IReadOnlyList<Alert>> GetByFieldAsync(
         string fieldId,
-        DateTime? from = null,
-        DateTime? to = null,
+        DateTimeOffset? from = null,
+        DateTimeOffset? to = null,
         CancellationToken cancellationToken = default);
 
     /// <summary>
@@ -31,8 +31,8 @@ public interface IAlertStore
     /// </summary>
     Task<IReadOnlyList<Alert>> GetByFarmAsync(
         string farmId,
-        DateTime? from = null,
-        DateTime? to = null,
+        DateTimeOffset? from = null,
+        DateTimeOffset? to = null,
         CancellationToken cancellationToken = default);
 
     /// <summary>

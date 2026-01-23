@@ -6,7 +6,7 @@ namespace FieldMonitoring.Domain.Fields.RuleEvaluation;
 
 /// <summary>
 /// Classe base para avaliadores de regras.
-/// Fornece metodo utilitario compartilhado.
+/// Fornece método utilitário compartilhado.
 /// </summary>
 internal abstract class RuleEvaluatorBase : IRuleEvaluator
 {
@@ -19,14 +19,14 @@ internal abstract class RuleEvaluatorBase : IRuleEvaluator
         RuleEvaluationContext context);
 
     /// <summary>
-    /// Verifica se a condicao anormal excedeu a janela de tempo configurada.
+    /// Verifica se a condição anormal excedeu a janela de tempo configurada.
     /// </summary>
-    protected static bool IsConditionExceeded(DateTime? lastTimeNormal, int windowHours, DateTime currentTime)
+    protected static bool IsConditionExceeded(DateTimeOffset? lastTimeNormal, int windowHours, DateTimeOffset currentTime)
     {
         if (lastTimeNormal == null)
             return false;
 
-        // Leitura atual mais antiga que ultima vez normal (dados historicos)
+        // Leitura atual mais antiga que última vez normal (dados históricos)
         if (currentTime < lastTimeNormal.Value)
             return false;
 

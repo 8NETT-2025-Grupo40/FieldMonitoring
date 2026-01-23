@@ -6,7 +6,7 @@ namespace FieldMonitoring.Domain.Fields.RuleEvaluation;
 
 /// <summary>
 /// Interface interna para avaliadores de regras de alerta.
-/// Cada implementacao encapsula a logica de uma regra especifica (Dryness, ExtremeHeat, etc).
+/// Cada implementação encapsula a lógica de uma regra específica (Dryness, ExtremeHeat, etc).
 /// </summary>
 internal interface IRuleEvaluator
 {

@@ -36,7 +36,7 @@ public class AlertTests
         // Assert
         alert.Status.Should().Be(AlertStatus.Resolved);
         alert.ResolvedAt.Should().NotBeNull();
-        alert.ResolvedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(1));
+        alert.ResolvedAt.Should().BeCloseTo(DateTimeOffset.UtcNow, TimeSpan.FromSeconds(1));
     }
 
 }

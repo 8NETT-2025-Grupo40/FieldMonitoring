@@ -101,12 +101,12 @@ public class FieldTests
         Field field = Field.Create("field-1", "farm-1");
         Rule rule = CreateDrynessRule(threshold: 30.0, windowHours: 24);
 
-        // Primera leitura normal
-        SensorReading reading1 = CreateReading("field-1", soilMoisture: 35.0, timestamp: DateTime.UtcNow.AddHours(-10));
+        // Primeira leitura normal
+        SensorReading reading1 = CreateReading("field-1", soilMoisture: 35.0, timestamp: DateTimeOffset.UtcNow.AddHours(-10));
         field.ProcessReading(reading1, rule);
 
         // Segunda leitura abaixo do threshold, mas há apenas 5 horas
-        SensorReading reading2 = CreateReading("field-1", soilMoisture: 25.0, timestamp: DateTime.UtcNow.AddHours(-5));
+        SensorReading reading2 = CreateReading("field-1", soilMoisture: 25.0, timestamp: DateTimeOffset.UtcNow.AddHours(-5));
 
         // Act
         field.ProcessReading(reading2, rule);
@@ -124,11 +124,11 @@ public class FieldTests
         Rule rule = CreateDrynessRule(threshold: 30.0, windowHours: 24);
 
         // Primeira leitura normal (estabelece baseline)
-        SensorReading reading1 = CreateReading("field-1", soilMoisture: 35.0, timestamp: DateTime.UtcNow.AddHours(-30));
+        SensorReading reading1 = CreateReading("field-1", soilMoisture: 35.0, timestamp: DateTimeOffset.UtcNow.AddHours(-30));
         field.ProcessReading(reading1, rule);
 
         // Segunda leitura abaixo do threshold por > 24 horas
-        SensorReading reading2 = CreateReading("field-1", soilMoisture: 25.0, timestamp: DateTime.UtcNow);
+        SensorReading reading2 = CreateReading("field-1", soilMoisture: 25.0, timestamp: DateTimeOffset.UtcNow);
 
         // Act
         field.ProcessReading(reading2, rule);
@@ -149,15 +149,15 @@ public class FieldTests
         Rule rule = CreateDrynessRule(threshold: 30.0, windowHours: 24);
 
         // Cria condição de seca
-        SensorReading reading1 = CreateReading("field-1", soilMoisture: 35.0, timestamp: DateTime.UtcNow.AddHours(-30));
+        SensorReading reading1 = CreateReading("field-1", soilMoisture: 35.0, timestamp: DateTimeOffset.UtcNow.AddHours(-30));
         field.ProcessReading(reading1, rule);
-        SensorReading reading2 = CreateReading("field-1", soilMoisture: 25.0, timestamp: DateTime.UtcNow.AddHours(-1));
+        SensorReading reading2 = CreateReading("field-1", soilMoisture: 25.0, timestamp: DateTimeOffset.UtcNow.AddHours(-1));
         field.ProcessReading(reading2, rule);
 
         field.Status.Should().Be(FieldStatusType.DryAlert); // Confirma alerta ativo
 
         // Umidade retorna ao normal
-        SensorReading reading3 = CreateReading("field-1", soilMoisture: 40.0, timestamp: DateTime.UtcNow);
+        SensorReading reading3 = CreateReading("field-1", soilMoisture: 40.0, timestamp: DateTimeOffset.UtcNow);
 
         // Act
         field.ProcessReading(reading3, rule);
@@ -177,15 +177,15 @@ public class FieldTests
         Rule rule = CreateDrynessRule(threshold: 30.0, windowHours: 24);
 
         // Cria primeiro alerta
-        SensorReading reading1 = CreateReading("field-1", soilMoisture: 35.0, timestamp: DateTime.UtcNow.AddHours(-30));
+        SensorReading reading1 = CreateReading("field-1", soilMoisture: 35.0, timestamp: DateTimeOffset.UtcNow.AddHours(-30));
         field.ProcessReading(reading1, rule);
-        SensorReading reading2 = CreateReading("field-1", soilMoisture: 25.0, timestamp: DateTime.UtcNow.AddHours(-1));
+        SensorReading reading2 = CreateReading("field-1", soilMoisture: 25.0, timestamp: DateTimeOffset.UtcNow.AddHours(-1));
         field.ProcessReading(reading2, rule);
 
         var initialAlertCount = field.Alerts.Count;
 
         // Nova leitura ainda abaixo do threshold
-        SensorReading reading3 = CreateReading("field-1", soilMoisture: 20.0, timestamp: DateTime.UtcNow);
+        SensorReading reading3 = CreateReading("field-1", soilMoisture: 20.0, timestamp: DateTimeOffset.UtcNow);
 
         // Act
         field.ProcessReading(reading3, rule);
@@ -201,7 +201,7 @@ public class FieldTests
         // Arrange
         Field field = Field.Create("field-1", "farm-1");
         Rule rule = CreateDrynessRule(threshold: 30.0, windowHours: 24);
-        SensorReading reading = CreateReading("field-1", soilMoisture: 30.0, timestamp: DateTime.UtcNow);
+        SensorReading reading = CreateReading("field-1", soilMoisture: 30.0, timestamp: DateTimeOffset.UtcNow);
 
         // Act
         field.ProcessReading(reading, rule);
@@ -219,7 +219,7 @@ public class FieldTests
         Rule rule = CreateDrynessRule(threshold: 30.0, windowHours: 24);
 
         // Primeira leitura já abaixo do threshold (sem histórico prévio)
-        SensorReading reading = CreateReading("field-1", soilMoisture: 20.0, timestamp: DateTime.UtcNow);
+        SensorReading reading = CreateReading("field-1", soilMoisture: 20.0, timestamp: DateTimeOffset.UtcNow);
 
         // Act
         field.ProcessReading(reading, rule);
@@ -243,9 +243,9 @@ public class FieldTests
         Rule rule = CreateDrynessRule(threshold: 30.0, windowHours: 24);
 
         // Cria alerta
-        SensorReading reading1 = CreateReading("field-1", soilMoisture: 35.0, timestamp: DateTime.UtcNow.AddHours(-30));
+        SensorReading reading1 = CreateReading("field-1", soilMoisture: 35.0, timestamp: DateTimeOffset.UtcNow.AddHours(-30));
         field.ProcessReading(reading1, rule);
-        SensorReading reading2 = CreateReading("field-1", soilMoisture: 25.0, timestamp: DateTime.UtcNow);
+        SensorReading reading2 = CreateReading("field-1", soilMoisture: 25.0, timestamp: DateTimeOffset.UtcNow);
         field.ProcessReading(reading2, rule);
 
         // Assert
@@ -259,7 +259,7 @@ public class FieldTests
         // Arrange
         Field field = Field.Create("field-1", "farm-1");
         Rule rule = CreateDrynessRule(threshold: 30.0, windowHours: 24);
-        SensorReading reading = CreateReading("field-1", soilMoisture: 50.0, timestamp: DateTime.UtcNow);
+        SensorReading reading = CreateReading("field-1", soilMoisture: 50.0, timestamp: DateTimeOffset.UtcNow);
 
         // Act
         field.ProcessReading(reading, rule);
@@ -316,7 +316,7 @@ public class FieldTests
         double soilMoisture,
         double soilTemperature = 25.0,
         double rain = 2.5,
-        DateTime? timestamp = null,
+        DateTimeOffset? timestamp = null,
         string sensorId = "sensor-1")
     {
         Result<SensorReading> result = SensorReading.Create(
@@ -324,7 +324,7 @@ public class FieldTests
             sensorId: sensorId,
             fieldId: fieldId,
             farmId: "farm-1",
-            timestamp: timestamp ?? DateTime.UtcNow,
+            timestamp: timestamp ?? DateTimeOffset.UtcNow,
             soilMoisturePercent: soilMoisture,
             soilTemperatureC: soilTemperature,
             rainMm: rain,

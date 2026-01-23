@@ -18,15 +18,15 @@ internal sealed class DrynessRuleEvaluator : RuleEvaluatorBase
         SoilMoisture thresholdMoisture = SoilMoisture.FromPercent(rule.Threshold).Value!;
         var windowHours = rule.WindowHours;
 
-        // Umidade acima ou igual ao threshold = condicao normal
+        // Umidade acima ou igual ao threshold = condição normal
         if (reading.SoilMoisture.IsAbove(thresholdMoisture) || 
             reading.SoilMoisture.Percent == thresholdMoisture.Percent)
         {
-            context.LastTimeAboveDryThreshold = reading.Timestamp;
+            context.SetLastTimeNormal(RuleType, reading.Timestamp);
 
-            if (context.DryAlertActive)
+            if (context.IsAlertActive(AlertType))
             {
-                context.DryAlertActive = false;
+                context.SetAlertActive(AlertType, false);
                 return RuleEvaluationResult.ResolveAlert();
             }
 
@@ -34,19 +34,20 @@ internal sealed class DrynessRuleEvaluator : RuleEvaluatorBase
         }
 
         // Umidade abaixo do threshold - primeira leitura inicializa tracking
-        if (context.LastTimeAboveDryThreshold == null)
+        if (context.GetLastTimeNormal(RuleType) == null)
         {
-            context.LastTimeAboveDryThreshold = reading.Timestamp;
+            context.SetLastTimeNormal(RuleType, reading.Timestamp);
         }
 
         // Verifica se excedeu a janela de tempo
-        if (IsConditionExceeded(context.LastTimeAboveDryThreshold, windowHours, reading.Timestamp) && 
-            !context.DryAlertActive)
+        var lastTimeNormal = context.GetLastTimeNormal(RuleType);
+        if (IsConditionExceeded(lastTimeNormal, windowHours, reading.Timestamp) && 
+            !context.IsAlertActive(AlertType))
         {
-            var hoursBelow = (reading.Timestamp - context.LastTimeAboveDryThreshold!.Value).TotalHours;
+            var hoursBelow = (reading.Timestamp - lastTimeNormal!.Value).TotalHours;
             var reason = $"Umidade do solo abaixo de {thresholdMoisture.Percent}% por {hoursBelow:F0} horas";
             
-            context.DryAlertActive = true;
+            context.SetAlertActive(AlertType, true);
             return RuleEvaluationResult.RaiseAlert(reason);
         }
 

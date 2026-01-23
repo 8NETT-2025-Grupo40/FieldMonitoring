@@ -26,8 +26,8 @@ public class FieldsControllerTests : IClassFixture<TestWebApplicationFactory>
     public async Task GetHistory_ShouldReturnEmptyListForNewField()
     {
         // Arrange
-        var from = DateTime.UtcNow.AddDays(-1).ToString("o");
-        var to = DateTime.UtcNow.ToString("o");
+        var from = DateTimeOffset.UtcNow.AddDays(-1).ToString("o");
+        var to = DateTimeOffset.UtcNow.ToString("o");
 
         // Act
         HttpResponseMessage response = await _client.GetAsync($"/api/fields/new-field/history?from={from}&to={to}");

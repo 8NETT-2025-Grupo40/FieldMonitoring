@@ -10,7 +10,7 @@ public sealed record ReadingDto
     /// <summary>
     /// Timestamp da leitura.
     /// </summary>
-    public required DateTime Timestamp { get; init; }
+    public required DateTimeOffset Timestamp { get; init; }
 
     /// <summary>
     /// Identificador do sensor que gerou a leitura.

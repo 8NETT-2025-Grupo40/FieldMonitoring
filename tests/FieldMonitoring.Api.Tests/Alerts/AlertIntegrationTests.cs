@@ -27,8 +27,8 @@ public class AlertIntegrationTests : IClassFixture<IntegrationTestFixture>
         // Arrange - Leituras abaixo do threshold por >24h
         var messages = new[]
         {
-            new TelemetryMessageBuilder().ForField("field-A1", "farm-1").WithSoilMoisture(25.0).WithTimestamp(DateTime.UtcNow.AddHours(-30)).Build(),
-            new TelemetryMessageBuilder().ForField("field-A1", "farm-1").WithSoilMoisture(20.0).WithTimestamp(DateTime.UtcNow).Build()
+            new TelemetryMessageBuilder().ForField("field-A1", "farm-1").WithSoilMoisture(25.0).WithTimestamp(DateTimeOffset.UtcNow.AddHours(-30)).Build(),
+            new TelemetryMessageBuilder().ForField("field-A1", "farm-1").WithSoilMoisture(20.0).WithTimestamp(DateTimeOffset.UtcNow).Build()
         };
 
         using (var scope = _fixture.Services.CreateScope())
@@ -58,8 +58,8 @@ public class AlertIntegrationTests : IClassFixture<IntegrationTestFixture>
         // Arrange - Criar alerta com seca
         var dryMessages = new[]
         {
-            new TelemetryMessageBuilder().ForField("field-A2", "farm-1").WithSoilMoisture(25.0).WithTimestamp(DateTime.UtcNow.AddHours(-30)).Build(),
-            new TelemetryMessageBuilder().ForField("field-A2", "farm-1").WithSoilMoisture(20.0).WithTimestamp(DateTime.UtcNow.AddHours(-1)).Build()
+            new TelemetryMessageBuilder().ForField("field-A2", "farm-1").WithSoilMoisture(25.0).WithTimestamp(DateTimeOffset.UtcNow.AddHours(-30)).Build(),
+            new TelemetryMessageBuilder().ForField("field-A2", "farm-1").WithSoilMoisture(20.0).WithTimestamp(DateTimeOffset.UtcNow.AddHours(-1)).Build()
         };
 
         using (var scope = _fixture.Services.CreateScope())
@@ -75,7 +75,7 @@ public class AlertIntegrationTests : IClassFixture<IntegrationTestFixture>
         var recoveryMessage = new TelemetryMessageBuilder()
             .ForField("field-A2", "farm-1")
             .WithSoilMoisture(40.0)
-            .WithTimestamp(DateTime.UtcNow)
+            .WithTimestamp(DateTimeOffset.UtcNow)
             .Build();
 
         using (var scope = _fixture.Services.CreateScope())
@@ -105,8 +105,8 @@ public class AlertIntegrationTests : IClassFixture<IntegrationTestFixture>
         // Arrange - Apenas 12 horas abaixo do threshold
         var messages = new[]
         {
-            new TelemetryMessageBuilder().ForField("field-A6", "farm-1").WithSoilMoisture(25.0).WithTimestamp(DateTime.UtcNow.AddHours(-12)).Build(),
-            new TelemetryMessageBuilder().ForField("field-A6", "farm-1").WithSoilMoisture(20.0).WithTimestamp(DateTime.UtcNow).Build()
+            new TelemetryMessageBuilder().ForField("field-A6", "farm-1").WithSoilMoisture(25.0).WithTimestamp(DateTimeOffset.UtcNow.AddHours(-12)).Build(),
+            new TelemetryMessageBuilder().ForField("field-A6", "farm-1").WithSoilMoisture(20.0).WithTimestamp(DateTimeOffset.UtcNow).Build()
         };
 
         using (var scope = _fixture.Services.CreateScope())
@@ -133,10 +133,10 @@ public class AlertIntegrationTests : IClassFixture<IntegrationTestFixture>
         // Arrange - Múltiplas leituras secas
         var messages = new[]
         {
-            new TelemetryMessageBuilder().ForField("field-A7", "farm-1").WithSoilMoisture(25.0).WithTimestamp(DateTime.UtcNow.AddHours(-30)).Build(),
-            new TelemetryMessageBuilder().ForField("field-A7", "farm-1").WithSoilMoisture(20.0).WithTimestamp(DateTime.UtcNow.AddHours(-10)).Build(),
-            new TelemetryMessageBuilder().ForField("field-A7", "farm-1").WithSoilMoisture(22.0).WithTimestamp(DateTime.UtcNow.AddHours(-5)).Build(),
-            new TelemetryMessageBuilder().ForField("field-A7", "farm-1").WithSoilMoisture(18.0).WithTimestamp(DateTime.UtcNow).Build()
+            new TelemetryMessageBuilder().ForField("field-A7", "farm-1").WithSoilMoisture(25.0).WithTimestamp(DateTimeOffset.UtcNow.AddHours(-30)).Build(),
+            new TelemetryMessageBuilder().ForField("field-A7", "farm-1").WithSoilMoisture(20.0).WithTimestamp(DateTimeOffset.UtcNow.AddHours(-10)).Build(),
+            new TelemetryMessageBuilder().ForField("field-A7", "farm-1").WithSoilMoisture(22.0).WithTimestamp(DateTimeOffset.UtcNow.AddHours(-5)).Build(),
+            new TelemetryMessageBuilder().ForField("field-A7", "farm-1").WithSoilMoisture(18.0).WithTimestamp(DateTimeOffset.UtcNow).Build()
         };
 
         using (var scope = _fixture.Services.CreateScope())

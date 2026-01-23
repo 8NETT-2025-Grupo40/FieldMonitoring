@@ -49,27 +49,15 @@ public sealed class InfluxTimeSeriesAdapter : ITimeSeriesReadingsStore, IDisposa
 
     public async Task AppendAsync(SensorReading reading, CancellationToken cancellationToken = default)
     {
-        try
-        {
-            PointData point = BuildPoint(reading);
-            var writeApi = _client.GetWriteApiAsync();
-            await writeApi.WritePointAsync(point, _options.Bucket!, _options.Org!, cancellationToken);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex,
-                "Failed to write reading {ReadingId} for field {FieldId} to InfluxDb bucket {Bucket}",
-                reading.ReadingId,
-                reading.FieldId,
-                _options.Bucket);
-            throw;
-        }
+        PointData point = BuildPoint(reading);
+        var writeApi = _client.GetWriteApiAsync();
+        await writeApi.WritePointAsync(point, _options.Bucket!, _options.Org!, cancellationToken);
     }
 
     public async Task<IReadOnlyList<SensorReading>> GetByPeriodAsync(
         string fieldId,
-        DateTime from,
-        DateTime to,
+        DateTimeOffset from,
+        DateTimeOffset to,
         CancellationToken cancellationToken = default)
     {
         string flux = BuildQuery(fieldId, from, to);
@@ -100,7 +88,7 @@ public sealed class InfluxTimeSeriesAdapter : ITimeSeriesReadingsStore, IDisposa
 
     private PointData BuildPoint(SensorReading reading)
     {
-        // Tags sao filtros com cardinalidade controlada. Fields sao valores numericos.
+        // Tags são filtros com cardinalidade controlada. Fields são valores numéricos.
         PointData point = PointData
             .Measurement(_options.Measurement!)
             .Tag(TagFieldId, reading.FieldId)
@@ -126,7 +114,7 @@ public sealed class InfluxTimeSeriesAdapter : ITimeSeriesReadingsStore, IDisposa
         return point;
     }
 
-    private string BuildQuery(string fieldId, DateTime from, DateTime to)
+    private string BuildQuery(string fieldId, DateTimeOffset from, DateTimeOffset to)
     {
         DateTime start = NormalizeTimestamp(from);
         DateTime stop = NormalizeTimestamp(to);
@@ -162,14 +150,13 @@ public sealed class InfluxTimeSeriesAdapter : ITimeSeriesReadingsStore, IDisposa
 
     private bool TryBuildReading(FluxRecord record, out SensorReading reading)
     {
-        DateTime? timestamp = GetTimestamp(record);
+        DateTimeOffset? timestamp = GetTimestamp(record);
         string? fieldId = GetStringValue(record, TagFieldId);
         string? farmId = GetStringValue(record, TagFarmId);
         string? sensorId = GetStringValue(record, TagSensorId);
 
         if (timestamp == null || string.IsNullOrWhiteSpace(fieldId) || string.IsNullOrWhiteSpace(farmId) || string.IsNullOrWhiteSpace(sensorId))
         {
-            _logger.LogDebug("Skipping InfluxDb record: required tags are missing.");
             reading = null!;
             return false;
         }
@@ -180,7 +167,6 @@ public sealed class InfluxTimeSeriesAdapter : ITimeSeriesReadingsStore, IDisposa
 
         if (!soilHumidity.HasValue || !soilTemperature.HasValue || !rainMm.HasValue)
         {
-            _logger.LogDebug("Skipping InfluxDb record: required fields are missing for field {FieldId}.", fieldId);
             reading = null!;
             return false;
         }
@@ -198,7 +184,7 @@ public sealed class InfluxTimeSeriesAdapter : ITimeSeriesReadingsStore, IDisposa
             sensorId: sensorId,
             fieldId: fieldId,
             farmId: farmId,
-            timestamp: NormalizeTimestamp(timestamp.Value),
+            timestamp: timestamp.Value,
             soilMoisturePercent: soilHumidity.Value,
             soilTemperatureC: soilTemperature.Value,
             rainMm: rainMm.Value,
@@ -222,7 +208,7 @@ public sealed class InfluxTimeSeriesAdapter : ITimeSeriesReadingsStore, IDisposa
         return value.Replace("\\", "\\\\").Replace("\"", "\\\"");
     }
 
-    private static DateTime? GetTimestamp(FluxRecord record)
+    private static DateTimeOffset? GetTimestamp(FluxRecord record)
     {
         if (!record.Values.TryGetValue("_time", out object? value) || value == null)
         {
@@ -232,26 +218,31 @@ public sealed class InfluxTimeSeriesAdapter : ITimeSeriesReadingsStore, IDisposa
         return value switch
         {
             DateTime dateTime => NormalizeTimestamp(dateTime),
-            DateTimeOffset dateTimeOffset => dateTimeOffset.UtcDateTime,
-            Instant instant => instant.ToDateTimeUtc(),
-            string text when DateTime.TryParse(text, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal, out DateTime parsed) => parsed,
+            DateTimeOffset dateTimeOffset => dateTimeOffset.ToUniversalTime(),
+            Instant instant => new DateTimeOffset(instant.ToDateTimeUtc(), TimeSpan.Zero),
+            string text when DateTimeOffset.TryParse(text, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal, out DateTimeOffset parsed) => parsed,
             _ => null
         };
     }
 
-    private static DateTime NormalizeTimestamp(DateTime timestamp)
+    private static DateTime NormalizeTimestamp(DateTimeOffset timestamp)
+    {
+        return timestamp.UtcDateTime;
+    }
+
+    private static DateTimeOffset NormalizeTimestamp(DateTime timestamp)
     {
         if (timestamp.Kind == DateTimeKind.Utc)
         {
-            return timestamp;
+            return new DateTimeOffset(timestamp, TimeSpan.Zero);
         }
 
         if (timestamp.Kind == DateTimeKind.Local)
         {
-            return timestamp.ToUniversalTime();
+            return new DateTimeOffset(timestamp.ToUniversalTime(), TimeSpan.Zero);
         }
 
-        return DateTime.SpecifyKind(timestamp, DateTimeKind.Utc);
+        return new DateTimeOffset(DateTime.SpecifyKind(timestamp, DateTimeKind.Utc));
     }
 
     private static double? GetDoubleValue(FluxRecord record, string key)

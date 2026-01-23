@@ -21,15 +21,15 @@ internal sealed class DryAirRuleEvaluator : RuleEvaluatorBase
         AirHumidity thresholdHumidity = AirHumidity.FromPercent(rule.Threshold).Value!;
         var windowHours = rule.WindowHours;
 
-        // Umidade acima ou igual ao threshold = condicao normal
+        // Umidade acima ou igual ao threshold = condição normal
         if (reading.AirHumidity.IsAbove(thresholdHumidity) || 
             reading.AirHumidity.Percent == thresholdHumidity.Percent)
         {
-            context.LastTimeAboveDryAirThreshold = reading.Timestamp;
+            context.SetLastTimeNormal(RuleType, reading.Timestamp);
 
-            if (context.DryAirAlertActive)
+            if (context.IsAlertActive(AlertType))
             {
-                context.DryAirAlertActive = false;
+                context.SetAlertActive(AlertType, false);
                 return RuleEvaluationResult.ResolveAlert();
             }
 
@@ -37,19 +37,21 @@ internal sealed class DryAirRuleEvaluator : RuleEvaluatorBase
         }
 
         // Umidade abaixo do threshold - primeira leitura inicializa tracking
-        if (context.LastTimeAboveDryAirThreshold == null)
+        var lastTimeNormal = context.GetLastTimeNormal(RuleType);
+        if (lastTimeNormal == null)
         {
-            context.LastTimeAboveDryAirThreshold = reading.Timestamp;
+            context.SetLastTimeNormal(RuleType, reading.Timestamp);
+            lastTimeNormal = reading.Timestamp;
         }
 
         // Verifica se excedeu a janela de tempo
-        if (IsConditionExceeded(context.LastTimeAboveDryAirThreshold, windowHours, reading.Timestamp) && 
-            !context.DryAirAlertActive)
+        if (IsConditionExceeded(lastTimeNormal, windowHours, reading.Timestamp) && 
+            !context.IsAlertActive(AlertType))
         {
-            var hoursBelow = (reading.Timestamp - context.LastTimeAboveDryAirThreshold!.Value).TotalHours;
+            var hoursBelow = (reading.Timestamp - lastTimeNormal!.Value).TotalHours;
             var reason = $"Umidade do ar abaixo de {thresholdHumidity.Percent}% por {hoursBelow:F0} horas";
             
-            context.DryAirAlertActive = true;
+            context.SetAlertActive(AlertType, true);
             return RuleEvaluationResult.RaiseAlert(reason);
         }
 

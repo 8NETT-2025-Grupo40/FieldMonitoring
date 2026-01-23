@@ -31,12 +31,12 @@ public class DryAirAlertIntegrationTests : IClassFixture<IntegrationTestFixture>
             new TelemetryMessageBuilder()
                 .ForField("field-dryair-1", "farm-1")
                 .WithAirHumidity(15.0)
-                .WithTimestamp(DateTime.UtcNow.AddHours(-7))
+                .WithTimestamp(DateTimeOffset.UtcNow.AddHours(-7))
                 .Build(),
             new TelemetryMessageBuilder()
                 .ForField("field-dryair-1", "farm-1")
                 .WithAirHumidity(18.0)
-                .WithTimestamp(DateTime.UtcNow)
+                .WithTimestamp(DateTimeOffset.UtcNow)
                 .Build()
         };
 
@@ -70,12 +70,12 @@ public class DryAirAlertIntegrationTests : IClassFixture<IntegrationTestFixture>
             new TelemetryMessageBuilder()
                 .ForField("field-dryair-2", "farm-1")
                 .WithAirHumidity(15.0)
-                .WithTimestamp(DateTime.UtcNow.AddHours(-8))
+                .WithTimestamp(DateTimeOffset.UtcNow.AddHours(-8))
                 .Build(),
             new TelemetryMessageBuilder()
                 .ForField("field-dryair-2", "farm-1")
                 .WithAirHumidity(18.0)
-                .WithTimestamp(DateTime.UtcNow.AddHours(-1))
+                .WithTimestamp(DateTimeOffset.UtcNow.AddHours(-1))
                 .Build()
         };
 
@@ -97,7 +97,7 @@ public class DryAirAlertIntegrationTests : IClassFixture<IntegrationTestFixture>
         var recoveryMessage = new TelemetryMessageBuilder()
             .ForField("field-dryair-2", "farm-1")
             .WithAirHumidity(35.0)
-            .WithTimestamp(DateTime.UtcNow)
+            .WithTimestamp(DateTimeOffset.UtcNow)
             .Build();
 
         using (var scope = _fixture.Services.CreateScope())
@@ -128,12 +128,12 @@ public class DryAirAlertIntegrationTests : IClassFixture<IntegrationTestFixture>
             new TelemetryMessageBuilder()
                 .ForField("field-dryair-3", "farm-1")
                 .WithAirHumidity(20.0)
-                .WithTimestamp(DateTime.UtcNow.AddHours(-7))
+                .WithTimestamp(DateTimeOffset.UtcNow.AddHours(-7))
                 .Build(),
             new TelemetryMessageBuilder()
                 .ForField("field-dryair-3", "farm-1")
                 .WithAirHumidity(20.0)
-                .WithTimestamp(DateTime.UtcNow)
+                .WithTimestamp(DateTimeOffset.UtcNow)
                 .Build()
         };
 
@@ -164,12 +164,12 @@ public class DryAirAlertIntegrationTests : IClassFixture<IntegrationTestFixture>
             new TelemetryMessageBuilder()
                 .ForField("field-dryair-4", "farm-1")
                 .WithAirHumidity(15.0)
-                .WithTimestamp(DateTime.UtcNow.AddHours(-8))
+                .WithTimestamp(DateTimeOffset.UtcNow.AddHours(-8))
                 .Build(),
             new TelemetryMessageBuilder()
                 .ForField("field-dryair-4", "farm-1")
                 .WithAirHumidity(18.0)
-                .WithTimestamp(DateTime.UtcNow.AddHours(-1))
+                .WithTimestamp(DateTimeOffset.UtcNow.AddHours(-1))
                 .Build()
         };
 
@@ -186,7 +186,7 @@ public class DryAirAlertIntegrationTests : IClassFixture<IntegrationTestFixture>
         var recoveryMessage = new TelemetryMessageBuilder()
             .ForField("field-dryair-4", "farm-1")
             .WithAirHumidity(20.0)
-            .WithTimestamp(DateTime.UtcNow)
+            .WithTimestamp(DateTimeOffset.UtcNow)
             .Build();
 
         using (var scope = _fixture.Services.CreateScope())
@@ -211,12 +211,12 @@ public class DryAirAlertIntegrationTests : IClassFixture<IntegrationTestFixture>
             new TelemetryMessageBuilder()
                 .ForField("field-dryair-5", "farm-1")
                 .WithAirHumidity(15.0)
-                .WithTimestamp(DateTime.UtcNow.AddHours(-3))
+                .WithTimestamp(DateTimeOffset.UtcNow.AddHours(-3))
                 .Build(),
             new TelemetryMessageBuilder()
                 .ForField("field-dryair-5", "farm-1")
                 .WithAirHumidity(18.0)
-                .WithTimestamp(DateTime.UtcNow)
+                .WithTimestamp(DateTimeOffset.UtcNow)
                 .Build()
         };
 
@@ -247,12 +247,12 @@ public class DryAirAlertIntegrationTests : IClassFixture<IntegrationTestFixture>
             new TelemetryMessageBuilder()
                 .ForField("field-dryair-6", "farm-1")
                 .WithSoilMoisture(50.0) // Apenas umidade do solo
-                .WithTimestamp(DateTime.UtcNow.AddHours(-7))
+                .WithTimestamp(DateTimeOffset.UtcNow.AddHours(-7))
                 .Build(),
             new TelemetryMessageBuilder()
                 .ForField("field-dryair-6", "farm-1")
                 .WithSoilMoisture(50.0)
-                .WithTimestamp(DateTime.UtcNow)
+                .WithTimestamp(DateTimeOffset.UtcNow)
                 .Build()
         };
 

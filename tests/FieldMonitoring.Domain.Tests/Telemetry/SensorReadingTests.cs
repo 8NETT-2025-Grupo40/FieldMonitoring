@@ -13,7 +13,7 @@ public class SensorReadingTests
             sensorId: "sensor-1",
             fieldId: "field-1",
             farmId: "farm-1",
-            timestamp: DateTime.UtcNow,
+            timestamp: DateTimeOffset.UtcNow,
             soilMoisturePercent: 45.0,
             soilTemperatureC: 25.0,
             rainMm: 2.5);
@@ -35,7 +35,7 @@ public class SensorReadingTests
             sensorId: "sensor-1",
             fieldId: "field-1",
             farmId: "farm-1",
-            timestamp: DateTime.UtcNow,
+            timestamp: DateTimeOffset.UtcNow,
             soilMoisturePercent: 45.0,
             soilTemperatureC: 25.0,
             rainMm: 2.5);
@@ -54,7 +54,7 @@ public class SensorReadingTests
             sensorId: "sensor-1",
             fieldId: "field-1",
             farmId: "farm-1",
-            timestamp: DateTime.UtcNow,
+            timestamp: DateTimeOffset.UtcNow,
             soilMoisturePercent: 150.0, // Invalid
             soilTemperatureC: 25.0,
             rainMm: 2.5);
@@ -73,7 +73,7 @@ public class SensorReadingTests
             sensorId: "sensor-1",
             fieldId: "field-1",
             farmId: "farm-1",
-            timestamp: DateTime.UtcNow,
+            timestamp: DateTimeOffset.UtcNow,
             soilMoisturePercent: 45.0,
             soilTemperatureC: 100.0, // Invalid
             rainMm: 2.5);
@@ -92,7 +92,7 @@ public class SensorReadingTests
             sensorId: "sensor-1",
             fieldId: "field-1",
             farmId: "farm-1",
-            timestamp: DateTime.UtcNow,
+            timestamp: DateTimeOffset.UtcNow,
             soilMoisturePercent: 45.0,
             soilTemperatureC: 25.0,
             rainMm: -1.0); // Invalid
@@ -111,7 +111,7 @@ public class SensorReadingTests
             sensorId: "sensor-1",
             fieldId: "field-1",
             farmId: "farm-1",
-            timestamp: DateTime.UtcNow,
+            timestamp: DateTimeOffset.UtcNow,
             soilMoisturePercent: 45.0,
             soilTemperatureC: 25.0,
             rainMm: 2.5,

@@ -21,14 +21,14 @@ internal sealed class FrostRuleEvaluator : RuleEvaluatorBase
         Temperature thresholdTemp = Temperature.FromCelsius(rule.Threshold).Value!;
         var windowHours = rule.WindowHours;
 
-        // Temperatura acima ou igual ao threshold = condicao normal (strict: <)
+        // Temperatura acima ou igual ao threshold = condição normal (strict: <)
         if (reading.AirTemperature.Celsius >= thresholdTemp.Celsius)
         {
-            context.LastTimeAboveFrostThreshold = reading.Timestamp;
+            context.SetLastTimeNormal(RuleType, reading.Timestamp);
 
-            if (context.FrostAlertActive)
+            if (context.IsAlertActive(AlertType))
             {
-                context.FrostAlertActive = false;
+                context.SetAlertActive(AlertType, false);
                 return RuleEvaluationResult.ResolveAlert();
             }
 
@@ -36,19 +36,21 @@ internal sealed class FrostRuleEvaluator : RuleEvaluatorBase
         }
 
         // Temperatura abaixo do threshold (strict) - primeira leitura inicializa tracking
-        if (context.LastTimeAboveFrostThreshold == null)
+        var lastTimeNormal = context.GetLastTimeNormal(RuleType);
+        if (lastTimeNormal == null)
         {
-            context.LastTimeAboveFrostThreshold = reading.Timestamp;
+            context.SetLastTimeNormal(RuleType, reading.Timestamp);
+            lastTimeNormal = reading.Timestamp;
         }
 
         // Verifica se excedeu a janela de tempo
-        if (IsConditionExceeded(context.LastTimeAboveFrostThreshold, windowHours, reading.Timestamp) && 
-            !context.FrostAlertActive)
+        if (IsConditionExceeded(lastTimeNormal, windowHours, reading.Timestamp) && 
+            !context.IsAlertActive(AlertType))
         {
-            var hoursBelow = (reading.Timestamp - context.LastTimeAboveFrostThreshold!.Value).TotalHours;
+            var hoursBelow = (reading.Timestamp - lastTimeNormal!.Value).TotalHours;
             var reason = $"Temperatura do ar abaixo de {thresholdTemp.Celsius}°C por {hoursBelow:F0} horas (risco de geada)";
             
-            context.FrostAlertActive = true;
+            context.SetAlertActive(AlertType, true);
             return RuleEvaluationResult.RaiseAlert(reason);
         }
 

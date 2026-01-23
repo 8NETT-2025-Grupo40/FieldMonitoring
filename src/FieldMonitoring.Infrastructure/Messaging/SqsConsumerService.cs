@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Amazon.SQS;
 using Amazon.SQS.Model;
+using FieldMonitoring.Application.Serialization;
 using FieldMonitoring.Application.Telemetry;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -15,6 +16,14 @@ namespace FieldMonitoring.Infrastructure.Messaging;
 /// </summary>
 public class SqsConsumerService : BackgroundService
 {
+    private static readonly JsonSerializerOptions SerializerOptions = new()
+    {
+        PropertyNameCaseInsensitive = true,
+        Converters =
+        {
+            new StrictDateTimeOffsetJsonConverter()
+        }
+    };
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly IAmazonSQS _sqsClient;
     private readonly SqsOptions _options;
@@ -53,11 +62,6 @@ public class SqsConsumerService : BackgroundService
             try
             {
                 await ProcessMessagesAsync(stoppingToken);
-            }
-            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
-            {
-                _logger.LogInformation("SQS Consumer parando devido a cancelamento");
-                break;
             }
             catch (Exception ex)
             {
@@ -162,10 +166,7 @@ public class SqsConsumerService : BackgroundService
                 }
             }
 
-            return JsonSerializer.Deserialize<TelemetryReceivedMessage>(body, new JsonSerializerOptions
-            {
-                PropertyNameCaseInsensitive = true
-            });
+            return JsonSerializer.Deserialize<TelemetryReceivedMessage>(body, SerializerOptions);
         }
         catch (JsonException ex)
         {

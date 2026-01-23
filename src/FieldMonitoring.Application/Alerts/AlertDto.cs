@@ -55,12 +55,12 @@ public sealed record AlertDto
     /// <summary>
     /// Quando o alerta iniciou.
     /// </summary>
-    public required DateTime StartedAt { get; init; }
+    public required DateTimeOffset StartedAt { get; init; }
 
     /// <summary>
     /// Quando o alerta foi resolvido (null se ativo).
     /// </summary>
-    public DateTime? ResolvedAt { get; init; }
+    public DateTimeOffset? ResolvedAt { get; init; }
 
     /// <summary>
     /// Mapeia um Alert de domínio para AlertDto.

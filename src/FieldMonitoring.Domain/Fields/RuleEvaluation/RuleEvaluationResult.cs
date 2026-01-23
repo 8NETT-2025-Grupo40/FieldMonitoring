@@ -1,8 +1,8 @@
 namespace FieldMonitoring.Domain.Fields.RuleEvaluation;
 
 /// <summary>
-/// Resultado imutavel da avaliacao de uma regra.
-/// Indica se deve criar um novo alerta, resolver um existente, ou nenhuma acao.
+/// Resultado imutável da avaliação de uma regra.
+/// Indica se deve criar um novo alerta, resolver um existente, ou nenhuma ação.
 /// </summary>
 internal sealed record RuleEvaluationResult
 {
@@ -17,12 +17,12 @@ internal sealed record RuleEvaluationResult
     public bool ShouldResolveAlert { get; init; }
 
     /// <summary>
-    /// Razao/motivo do alerta (usado quando ShouldRaiseAlert = true).
+    /// Razão/motivo do alerta (usado quando ShouldRaiseAlert = true).
     /// </summary>
     public string? AlertReason { get; init; }
 
     /// <summary>
-    /// Cria um resultado indicando que nenhuma acao e necessaria.
+    /// Cria um resultado indicando que nenhuma ação é necessária.
     /// </summary>
     public static RuleEvaluationResult NoAction() => new();
 

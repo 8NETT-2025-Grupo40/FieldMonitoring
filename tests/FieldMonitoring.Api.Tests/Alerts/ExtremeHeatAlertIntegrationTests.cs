@@ -31,12 +31,12 @@ public class ExtremeHeatAlertIntegrationTests : IClassFixture<IntegrationTestFix
             new TelemetryMessageBuilder()
                 .ForField("field-heat-1", "farm-1")
                 .WithAirTemperature(42.0)
-                .WithTimestamp(DateTime.UtcNow.AddHours(-5))
+                .WithTimestamp(DateTimeOffset.UtcNow.AddHours(-5))
                 .Build(),
             new TelemetryMessageBuilder()
                 .ForField("field-heat-1", "farm-1")
                 .WithAirTemperature(43.0)
-                .WithTimestamp(DateTime.UtcNow)
+                .WithTimestamp(DateTimeOffset.UtcNow)
                 .Build()
         };
 
@@ -70,12 +70,12 @@ public class ExtremeHeatAlertIntegrationTests : IClassFixture<IntegrationTestFix
             new TelemetryMessageBuilder()
                 .ForField("field-heat-2", "farm-1")
                 .WithAirTemperature(42.0)
-                .WithTimestamp(DateTime.UtcNow.AddHours(-6))
+                .WithTimestamp(DateTimeOffset.UtcNow.AddHours(-6))
                 .Build(),
             new TelemetryMessageBuilder()
                 .ForField("field-heat-2", "farm-1")
                 .WithAirTemperature(43.0)
-                .WithTimestamp(DateTime.UtcNow.AddHours(-1))
+                .WithTimestamp(DateTimeOffset.UtcNow.AddHours(-1))
                 .Build()
         };
 
@@ -97,7 +97,7 @@ public class ExtremeHeatAlertIntegrationTests : IClassFixture<IntegrationTestFix
         var recoveryMessage = new TelemetryMessageBuilder()
             .ForField("field-heat-2", "farm-1")
             .WithAirTemperature(38.0)
-            .WithTimestamp(DateTime.UtcNow)
+            .WithTimestamp(DateTimeOffset.UtcNow)
             .Build();
 
         using (var scope = _fixture.Services.CreateScope())
@@ -128,12 +128,12 @@ public class ExtremeHeatAlertIntegrationTests : IClassFixture<IntegrationTestFix
             new TelemetryMessageBuilder()
                 .ForField("field-heat-3", "farm-1")
                 .WithAirTemperature(40.0)
-                .WithTimestamp(DateTime.UtcNow.AddHours(-5))
+                .WithTimestamp(DateTimeOffset.UtcNow.AddHours(-5))
                 .Build(),
             new TelemetryMessageBuilder()
                 .ForField("field-heat-3", "farm-1")
                 .WithAirTemperature(40.0)
-                .WithTimestamp(DateTime.UtcNow)
+                .WithTimestamp(DateTimeOffset.UtcNow)
                 .Build()
         };
 
@@ -164,12 +164,12 @@ public class ExtremeHeatAlertIntegrationTests : IClassFixture<IntegrationTestFix
             new TelemetryMessageBuilder()
                 .ForField("field-heat-4", "farm-1")
                 .WithAirTemperature(42.0)
-                .WithTimestamp(DateTime.UtcNow.AddHours(-6))
+                .WithTimestamp(DateTimeOffset.UtcNow.AddHours(-6))
                 .Build(),
             new TelemetryMessageBuilder()
                 .ForField("field-heat-4", "farm-1")
                 .WithAirTemperature(43.0)
-                .WithTimestamp(DateTime.UtcNow.AddHours(-1))
+                .WithTimestamp(DateTimeOffset.UtcNow.AddHours(-1))
                 .Build()
         };
 
@@ -186,7 +186,7 @@ public class ExtremeHeatAlertIntegrationTests : IClassFixture<IntegrationTestFix
         var recoveryMessage = new TelemetryMessageBuilder()
             .ForField("field-heat-4", "farm-1")
             .WithAirTemperature(40.0)
-            .WithTimestamp(DateTime.UtcNow)
+            .WithTimestamp(DateTimeOffset.UtcNow)
             .Build();
 
         using (var scope = _fixture.Services.CreateScope())
@@ -211,12 +211,12 @@ public class ExtremeHeatAlertIntegrationTests : IClassFixture<IntegrationTestFix
             new TelemetryMessageBuilder()
                 .ForField("field-heat-5", "farm-1")
                 .WithAirTemperature(42.0)
-                .WithTimestamp(DateTime.UtcNow.AddHours(-2))
+                .WithTimestamp(DateTimeOffset.UtcNow.AddHours(-2))
                 .Build(),
             new TelemetryMessageBuilder()
                 .ForField("field-heat-5", "farm-1")
                 .WithAirTemperature(43.0)
-                .WithTimestamp(DateTime.UtcNow)
+                .WithTimestamp(DateTimeOffset.UtcNow)
                 .Build()
         };
 
@@ -247,12 +247,12 @@ public class ExtremeHeatAlertIntegrationTests : IClassFixture<IntegrationTestFix
             new TelemetryMessageBuilder()
                 .ForField("field-heat-6", "farm-1")
                 .WithSoilMoisture(50.0) // Apenas umidade do solo
-                .WithTimestamp(DateTime.UtcNow.AddHours(-5))
+                .WithTimestamp(DateTimeOffset.UtcNow.AddHours(-5))
                 .Build(),
             new TelemetryMessageBuilder()
                 .ForField("field-heat-6", "farm-1")
                 .WithSoilMoisture(50.0)
-                .WithTimestamp(DateTime.UtcNow)
+                .WithTimestamp(DateTimeOffset.UtcNow)
                 .Build()
         };
 

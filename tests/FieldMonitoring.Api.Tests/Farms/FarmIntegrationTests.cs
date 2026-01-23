@@ -28,14 +28,14 @@ public class FarmIntegrationTests : IClassFixture<IntegrationTestFixture>
         var messages = new[]
         {
             // Field 1 - Normal
-            new TelemetryMessageBuilder().ForField("field-A", "farm-2").WithSoilMoisture(45.0).WithTimestamp(DateTime.UtcNow).Build(),
+            new TelemetryMessageBuilder().ForField("field-A", "farm-2").WithSoilMoisture(45.0).WithTimestamp(DateTimeOffset.UtcNow).Build(),
             
             // Field 2 - Com alerta
-            new TelemetryMessageBuilder().ForField("field-B", "farm-2").WithSoilMoisture(20.0).WithTimestamp(DateTime.UtcNow.AddHours(-30)).Build(),
-            new TelemetryMessageBuilder().ForField("field-B", "farm-2").WithSoilMoisture(18.0).WithTimestamp(DateTime.UtcNow).Build(),
+            new TelemetryMessageBuilder().ForField("field-B", "farm-2").WithSoilMoisture(20.0).WithTimestamp(DateTimeOffset.UtcNow.AddHours(-30)).Build(),
+            new TelemetryMessageBuilder().ForField("field-B", "farm-2").WithSoilMoisture(18.0).WithTimestamp(DateTimeOffset.UtcNow).Build(),
             
             // Field 3 - Normal
-            new TelemetryMessageBuilder().ForField("field-C", "farm-2").WithSoilMoisture(50.0).WithTimestamp(DateTime.UtcNow).Build()
+            new TelemetryMessageBuilder().ForField("field-C", "farm-2").WithSoilMoisture(50.0).WithTimestamp(DateTimeOffset.UtcNow).Build()
         };
 
         using (var scope = _fixture.Services.CreateScope())

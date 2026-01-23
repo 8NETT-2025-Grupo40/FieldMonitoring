@@ -10,7 +10,7 @@ namespace FieldMonitoring.Application.Telemetry;
 
 /// <summary>
 /// Orquestra o processamento de uma leitura de telemetria.
-/// Este é o ponto de entrada principal do Worker quando uma mensagem chega da fila SQS.
+/// Este e o ponto de entrada principal do Worker quando uma mensagem chega da fila SQS.
 /// </summary>
 public class ProcessTelemetryReadingUseCase
 {
@@ -43,33 +43,27 @@ public class ProcessTelemetryReadingUseCase
     {
         try
         {
-            // Converte a mensagem SQS para objeto de domínio
             SensorReading reading = message.ToSensorReading();
 
-            // Valida os dados da leitura (campos obrigatórios, ranges válidos)
             if (!reading.IsValid(out var errorMessage))
             {
-                _logger.LogWarning("Invalid reading {ReadingId} from field {FieldId}: {Error}", 
+                _logger.LogWarning("Invalid reading {ReadingId} from field {FieldId}: {Error}",
                     reading.ReadingId, reading.FieldId, errorMessage);
                 return ProcessingResult.Failed($"Invalid reading: {errorMessage}");
             }
 
-            // Verificação de idempotência - evita reprocessamento de leituras duplicadas
             if (await _idempotencyStore.ExistsAsync(reading.ReadingId, cancellationToken))
             {
                 return ProcessingResult.Skipped("Reading already processed");
             }
 
-            // Persiste no banco de séries temporais (histórico para consultas)
             await _timeSeriesStore.AppendAsync(reading, cancellationToken);
 
-            // Obtém ou cria o Field aggregate
             Field field = await _fieldRepository.GetByIdAsync(reading.FieldId, cancellationToken)
                 ?? Field.Create(reading.FieldId, reading.FarmId);
 
-            Dictionary<Guid, AlertStatus> alertStatusBefore = CaptureAlertStatuses(field);
+            var alertStatusBefore = AlertEventBuilder.CaptureStatuses(field.Alerts);
 
-            // Carrega todas as regras default habilitadas
             List<Rule> rules = new()
             {
                 Rule.CreateDefaultDrynessRule(),
@@ -79,24 +73,21 @@ public class ProcessTelemetryReadingUseCase
                 Rule.CreateDefaultHumidAirRule()
             };
 
-            // CORE: Processa leitura - toda lógica de negócio está encapsulada no aggregate
             field.ProcessReading(reading, rules);
 
-            // Persiste o aggregate completo (FieldStatus + FieldRuleState + Alerts)
             await _fieldRepository.SaveAsync(field, cancellationToken);
 
-            // Marca a leitura como processada (idempotência)
             await _idempotencyStore.MarkProcessedAsync(
                 new ProcessedReading
                 {
                     ReadingId = reading.ReadingId,
                     FieldId = reading.FieldId,
-                    ProcessedAt = DateTime.UtcNow,
+                    ProcessedAt = DateTimeOffset.UtcNow,
                     Source = reading.Source
                 },
                 cancellationToken);
 
-            IReadOnlyList<AlertEvent> alertEvents = BuildAlertEvents(alertStatusBefore, field.Alerts);
+            var alertEvents = AlertEventBuilder.BuildEvents(alertStatusBefore, field.Alerts);
             await PublishAlertEventsAsync(alertEvents, cancellationToken);
 
             return ProcessingResult.Success();
@@ -110,62 +101,12 @@ public class ProcessTelemetryReadingUseCase
         }
     }
 
-    private static Dictionary<Guid, AlertStatus> CaptureAlertStatuses(Field field)
-    {
-        return field.Alerts
-            .ToDictionary(alert => alert.AlertId, alert => alert.Status);
-    }
-
-    private static IReadOnlyList<AlertEvent> BuildAlertEvents(
-        IReadOnlyDictionary<Guid, AlertStatus> before,
-        IReadOnlyList<Alert> after)
-    {
-        List<AlertEvent> events = new();
-
-        foreach (Alert alert in after)
-        {
-            if (!before.TryGetValue(alert.AlertId, out AlertStatus previousStatus))
-            {
-                events.Add(CreateAlertEvent(alert));
-                continue;
-            }
-
-            if (previousStatus != alert.Status)
-            {
-                events.Add(CreateAlertEvent(alert));
-            }
-        }
-
-        return events;
-    }
-
-    private static AlertEvent CreateAlertEvent(Alert alert)
-    {
-        DateTime occurredAt = alert.Status == AlertStatus.Resolved
-            ? alert.ResolvedAt ?? DateTime.Now
-            : alert.StartedAt;
-
-        return new AlertEvent
-        {
-            AlertId = alert.AlertId,
-            FarmId = alert.FarmId,
-            FieldId = alert.FieldId,
-            AlertType = alert.AlertType,
-            Status = alert.Status,
-            Reason = alert.Reason,
-            Severity = alert.Severity,
-            OccurredAt = occurredAt
-        };
-    }
-
     private async Task PublishAlertEventsAsync(
         IReadOnlyList<AlertEvent> alertEvents,
         CancellationToken cancellationToken)
     {
         if (alertEvents.Count == 0)
-        {
             return;
-        }
 
         try
         {
@@ -173,10 +114,6 @@ public class ProcessTelemetryReadingUseCase
             {
                 await _alertEventsStore.AppendAsync(alertEvent, cancellationToken);
             }
-        }
-        catch (OperationCanceledException)
-        {
-            throw;
         }
         catch (Exception ex)
         {
@@ -186,16 +123,24 @@ public class ProcessTelemetryReadingUseCase
 }
 
 /// <summary>
-/// Resultado do processamento de uma leitura de telemetria.
-/// Indica se foi sucesso, se foi pulado (idempotência) ou se falhou.
+/// Status do processamento de uma leitura.
 /// </summary>
-public sealed record ProcessingResult
+public enum ProcessingStatus
 {
-    public bool IsSuccess { get; init; }
-    public bool WasSkipped { get; init; }
-    public string? Message { get; init; }
+    Success,
+    Skipped,
+    Failed
+}
 
-    public static ProcessingResult Success() => new() { IsSuccess = true };
-    public static ProcessingResult Skipped(string reason) => new() { IsSuccess = true, WasSkipped = true, Message = reason };
-    public static ProcessingResult Failed(string reason) => new() { IsSuccess = false, Message = reason };
+/// <summary>
+/// Resultado do processamento de uma leitura de telemetria.
+/// </summary>
+public sealed record ProcessingResult(ProcessingStatus Status, string? Message = null)
+{
+    public bool IsSuccess => Status is ProcessingStatus.Success or ProcessingStatus.Skipped;
+    public bool WasSkipped => Status is ProcessingStatus.Skipped;
+
+    public static ProcessingResult Success() => new(ProcessingStatus.Success);
+    public static ProcessingResult Skipped(string reason) => new(ProcessingStatus.Skipped, reason);
+    public static ProcessingResult Failed(string reason) => new(ProcessingStatus.Failed, reason);
 }

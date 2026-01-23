@@ -19,8 +19,8 @@ public class GetAlertHistoryQuery
     /// </summary>
     public async Task<IReadOnlyList<AlertDto>> ExecuteByFarmAsync(
         string farmId,
-        DateTime? from = null,
-        DateTime? to = null,
+        DateTimeOffset? from = null,
+        DateTimeOffset? to = null,
         CancellationToken cancellationToken = default)
     {
         IReadOnlyList<Alert> alerts = await _alertStore.GetByFarmAsync(farmId, from, to, cancellationToken);
@@ -32,8 +32,8 @@ public class GetAlertHistoryQuery
     /// </summary>
     public async Task<IReadOnlyList<AlertDto>> ExecuteByFieldAsync(
         string fieldId,
-        DateTime? from = null,
-        DateTime? to = null,
+        DateTimeOffset? from = null,
+        DateTimeOffset? to = null,
         CancellationToken cancellationToken = default)
     {
         IReadOnlyList<Alert> alerts = await _alertStore.GetByFieldAsync(fieldId, from, to, cancellationToken);

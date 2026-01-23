@@ -21,14 +21,14 @@ internal sealed class ExtremeHeatRuleEvaluator : RuleEvaluatorBase
         Temperature thresholdTemp = Temperature.FromCelsius(rule.Threshold).Value!;
         var windowHours = rule.WindowHours;
 
-        // Temperatura abaixo ou igual ao threshold = condicao normal (strict: >)
+        // Temperatura abaixo ou igual ao threshold = condição normal (strict: >)
         if (reading.AirTemperature.Celsius <= thresholdTemp.Celsius)
         {
-            context.LastTimeBelowHeatThreshold = reading.Timestamp;
+            context.SetLastTimeNormal(RuleType, reading.Timestamp);
 
-            if (context.HeatAlertActive)
+            if (context.IsAlertActive(AlertType))
             {
-                context.HeatAlertActive = false;
+                context.SetAlertActive(AlertType, false);
                 return RuleEvaluationResult.ResolveAlert();
             }
 
@@ -36,19 +36,21 @@ internal sealed class ExtremeHeatRuleEvaluator : RuleEvaluatorBase
         }
 
         // Temperatura acima do threshold (strict) - primeira leitura inicializa tracking
-        if (context.LastTimeBelowHeatThreshold == null)
+        var lastTimeNormal = context.GetLastTimeNormal(RuleType);
+        if (lastTimeNormal == null)
         {
-            context.LastTimeBelowHeatThreshold = reading.Timestamp;
+            context.SetLastTimeNormal(RuleType, reading.Timestamp);
+            lastTimeNormal = reading.Timestamp;
         }
 
         // Verifica se excedeu a janela de tempo
-        if (IsConditionExceeded(context.LastTimeBelowHeatThreshold, windowHours, reading.Timestamp) && 
-            !context.HeatAlertActive)
+        if (IsConditionExceeded(lastTimeNormal, windowHours, reading.Timestamp) && 
+            !context.IsAlertActive(AlertType))
         {
-            var hoursAbove = (reading.Timestamp - context.LastTimeBelowHeatThreshold!.Value).TotalHours;
+            var hoursAbove = (reading.Timestamp - lastTimeNormal!.Value).TotalHours;
             var reason = $"Temperatura do ar acima de {thresholdTemp.Celsius}°C por {hoursAbove:F0} horas";
             
-            context.HeatAlertActive = true;
+            context.SetAlertActive(AlertType, true);
             return RuleEvaluationResult.RaiseAlert(reason);
         }
 

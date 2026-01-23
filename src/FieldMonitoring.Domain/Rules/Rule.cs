@@ -37,7 +37,7 @@ public class Rule
     /// <summary>
     /// Timestamp da última atualização da regra.
     /// </summary>
-    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+    public DateTimeOffset UpdatedAt { get; set; } = DateTimeOffset.UtcNow;
 
     /// <summary>
     /// Cria uma regra de seca padrão (umidade do solo < 30% por 24 horas).
@@ -50,7 +50,7 @@ public class Rule
             IsEnabled = true,
             Threshold = 30.0,
             WindowHours = 24,
-            UpdatedAt = DateTime.UtcNow
+            UpdatedAt = DateTimeOffset.UtcNow
         };
     }
 
@@ -65,7 +65,7 @@ public class Rule
             IsEnabled = true,
             Threshold = 40.0,
             WindowHours = 4,
-            UpdatedAt = DateTime.UtcNow
+            UpdatedAt = DateTimeOffset.UtcNow
         };
     }
 
@@ -80,7 +80,7 @@ public class Rule
             IsEnabled = true,
             Threshold = 2.0,
             WindowHours = 2,
-            UpdatedAt = DateTime.UtcNow
+            UpdatedAt = DateTimeOffset.UtcNow
         };
     }
 
@@ -95,7 +95,7 @@ public class Rule
             IsEnabled = true,
             Threshold = 20.0,
             WindowHours = 6,
-            UpdatedAt = DateTime.UtcNow
+            UpdatedAt = DateTimeOffset.UtcNow
         };
     }
 
@@ -110,7 +110,7 @@ public class Rule
             IsEnabled = true,
             Threshold = 90.0,
             WindowHours = 12,
-            UpdatedAt = DateTime.UtcNow
+            UpdatedAt = DateTimeOffset.UtcNow
         };
     }
 

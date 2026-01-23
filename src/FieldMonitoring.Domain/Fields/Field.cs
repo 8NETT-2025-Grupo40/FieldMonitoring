@@ -20,29 +20,26 @@ public class Field
     // Status atual do talhão
     public FieldStatusType Status { get; private set; } = FieldStatusType.Normal;
     public string? StatusReason { get; private set; }
-    public DateTime? LastReadingAt { get; private set; }
+    public DateTimeOffset? LastReadingAt { get; private set; }
     public SoilMoisture? LastSoilMoisture { get; private set; }
     public Temperature? LastSoilTemperature { get; private set; }
     public Temperature? LastAirTemperature { get; private set; }
     public AirHumidity? LastAirHumidity { get; private set; }
     public RainMeasurement? LastRain { get; private set; }
-    public DateTime UpdatedAt { get; private set; } = DateTime.UtcNow;
+    public DateTimeOffset UpdatedAt { get; private set; } = DateTimeOffset.UtcNow;
 
     // Estado das regras - propriedades persistidas pelo EF Core
-    public DateTime? LastTimeAboveDryThreshold { get; private set; }
-    public DateTime? LastTimeBelowHeatThreshold { get; private set; }
-    public DateTime? LastTimeAboveFrostThreshold { get; private set; }
-    public DateTime? LastTimeAboveDryAirThreshold { get; private set; }
-    public DateTime? LastTimeBelowHumidAirThreshold { get; private set; }
+    // Mantidas para compatibilidade com banco existente
+    public DateTimeOffset? LastTimeAboveDryThreshold { get; private set; }
+    public DateTimeOffset? LastTimeBelowHeatThreshold { get; private set; }
+    public DateTimeOffset? LastTimeAboveFrostThreshold { get; private set; }
+    public DateTimeOffset? LastTimeAboveDryAirThreshold { get; private set; }
+    public DateTimeOffset? LastTimeBelowHumidAirThreshold { get; private set; }
 
-    // Flags de alerta ativo (in-memory, sincronizadas via SyncAlertStates)
-    private bool _dryAlertActive;
-    private bool _heatAlertActive;
-    private bool _frostAlertActive;
-    private bool _dryAirAlertActive;
-    private bool _humidAirAlertActive;
+    // Dicionário interno de alertas ativos (in-memory)
+    private readonly Dictionary<AlertType, bool> _activeAlerts = new();
 
-    // Avaliadores de regras (Strategy Pattern) - compartilhados entre instancias
+    // Avaliadores de regras (Strategy Pattern) - compartilhados entre instâncias
     private static readonly Dictionary<RuleType, IRuleEvaluator> Evaluators = new()
     {
         [RuleType.Dryness] = new DrynessRuleEvaluator(),
@@ -73,31 +70,17 @@ public class Field
 
     /// <summary>
     /// Sincroniza o estado interno dos alertas com os alertas carregados.
-    /// Chamado pelo Repository após EF carregar os alertas via Include.
+    /// Chamado pelo Repository após o EF carregar os alertas via Include.
     /// </summary>
     public void SyncAlertStates()
     {
-        _dryAlertActive = _alerts.Any(a =>
-            a.AlertType == AlertType.Dryness &&
-            a.Status == AlertStatus.Active);
-        _heatAlertActive = _alerts.Any(a =>
-            a.AlertType == AlertType.ExtremeHeat &&
-            a.Status == AlertStatus.Active);
-        _frostAlertActive = _alerts.Any(a =>
-            a.AlertType == AlertType.Frost &&
-            a.Status == AlertStatus.Active);
-        _dryAirAlertActive = _alerts.Any(a =>
-            a.AlertType == AlertType.DryAir &&
-            a.Status == AlertStatus.Active);
-        _humidAirAlertActive = _alerts.Any(a =>
-            a.AlertType == AlertType.HumidAir &&
-            a.Status == AlertStatus.Active);
+        _activeAlerts.Clear();
+        
+        foreach (var alert in _alerts.Where(a => a.Status == AlertStatus.Active))
+        {
+            _activeAlerts[alert.AlertType] = true;
+        }
     }
-
-    /// <summary>
-    /// Mantém compatibilidade com código existente.
-    /// </summary>
-    public void SyncDryAlertState() => SyncAlertStates();
 
     /// <summary>
     /// Carrega alertas ativos no aggregate (usado quando não há Include do EF).
@@ -118,13 +101,10 @@ public class Field
         if (reading.FieldId != FieldId)
             throw new InvalidOperationException($"Reading pertence a outro talhão: {reading.FieldId}");
 
-        // Atualiza valores da última leitura
         UpdateLastReadingValues(reading);
 
-        // Cria contexto para avaliação das regras
         var context = CreateEvaluationContext();
 
-        // Avalia todas as regras habilitadas usando os evaluators
         foreach (var rule in rules.Where(r => r.IsEnabled))
         {
             if (Evaluators.TryGetValue(rule.RuleType, out var evaluator))
@@ -134,10 +114,7 @@ public class Field
             }
         }
 
-        // Sincroniza propriedades persistidas com o contexto atualizado
         ApplyContextToProperties(context);
-
-        // Atualiza status baseado em alertas ativos
         UpdateStatus();
     }
 
@@ -154,19 +131,22 @@ public class Field
     /// </summary>
     private RuleEvaluationContext CreateEvaluationContext()
     {
-        return new RuleEvaluationContext
+        var context = new RuleEvaluationContext();
+        
+        // Popula timestamps das propriedades persistidas
+        context.SetLastTimeNormal(RuleType.Dryness, LastTimeAboveDryThreshold);
+        context.SetLastTimeNormal(RuleType.ExtremeHeat, LastTimeBelowHeatThreshold);
+        context.SetLastTimeNormal(RuleType.Frost, LastTimeAboveFrostThreshold);
+        context.SetLastTimeNormal(RuleType.DryAir, LastTimeAboveDryAirThreshold);
+        context.SetLastTimeNormal(RuleType.HumidAir, LastTimeBelowHumidAirThreshold);
+        
+        // Popula flags de alerta ativo
+        foreach (var kvp in _activeAlerts)
         {
-            LastTimeAboveDryThreshold = LastTimeAboveDryThreshold,
-            LastTimeBelowHeatThreshold = LastTimeBelowHeatThreshold,
-            LastTimeAboveFrostThreshold = LastTimeAboveFrostThreshold,
-            LastTimeAboveDryAirThreshold = LastTimeAboveDryAirThreshold,
-            LastTimeBelowHumidAirThreshold = LastTimeBelowHumidAirThreshold,
-            DryAlertActive = _dryAlertActive,
-            HeatAlertActive = _heatAlertActive,
-            FrostAlertActive = _frostAlertActive,
-            DryAirAlertActive = _dryAirAlertActive,
-            HumidAirAlertActive = _humidAirAlertActive
-        };
+            context.SetAlertActive(kvp.Key, kvp.Value);
+        }
+        
+        return context;
     }
 
     /// <summary>
@@ -174,17 +154,18 @@ public class Field
     /// </summary>
     private void ApplyContextToProperties(RuleEvaluationContext context)
     {
-        LastTimeAboveDryThreshold = context.LastTimeAboveDryThreshold;
-        LastTimeBelowHeatThreshold = context.LastTimeBelowHeatThreshold;
-        LastTimeAboveFrostThreshold = context.LastTimeAboveFrostThreshold;
-        LastTimeAboveDryAirThreshold = context.LastTimeAboveDryAirThreshold;
-        LastTimeBelowHumidAirThreshold = context.LastTimeBelowHumidAirThreshold;
+        // Atualiza propriedades persistidas
+        LastTimeAboveDryThreshold = context.GetLastTimeNormal(RuleType.Dryness);
+        LastTimeBelowHeatThreshold = context.GetLastTimeNormal(RuleType.ExtremeHeat);
+        LastTimeAboveFrostThreshold = context.GetLastTimeNormal(RuleType.Frost);
+        LastTimeAboveDryAirThreshold = context.GetLastTimeNormal(RuleType.DryAir);
+        LastTimeBelowHumidAirThreshold = context.GetLastTimeNormal(RuleType.HumidAir);
 
-        _dryAlertActive = context.DryAlertActive;
-        _heatAlertActive = context.HeatAlertActive;
-        _frostAlertActive = context.FrostAlertActive;
-        _dryAirAlertActive = context.DryAirAlertActive;
-        _humidAirAlertActive = context.HumidAirAlertActive;
+        // Atualiza dicionário de alertas ativos
+        foreach (var kvp in context.ActiveAlerts)
+        {
+            _activeAlerts[kvp.Key] = kvp.Value;
+        }
     }
 
     /// <summary>
@@ -199,7 +180,7 @@ public class Field
         LastAirHumidity = reading.AirHumidity;
         LastRain = reading.Rain;
         LastReadingAt = reading.Timestamp;
-        UpdatedAt = DateTime.UtcNow;
+        UpdatedAt = DateTimeOffset.UtcNow;
     }
 
     /// <summary>
@@ -218,25 +199,15 @@ public class Field
     }
 
     /// <summary>
-    /// Cria um novo alerta.
+    /// Cria um novo alerta usando a factory unificada.
     /// Garante invariante: só pode existir 1 alerta ativo por tipo.
     /// </summary>
     private void RaiseAlert(AlertType type, string reason)
     {
-        // Invariante: não permite alertas duplicados do mesmo tipo
         if (_alerts.Any(a => a.AlertType == type && a.Status == AlertStatus.Active))
             return;
 
-        Alert alert = type switch
-        {
-            AlertType.Dryness => Alert.CreateDrynessAlert(FarmId, FieldId, reason),
-            AlertType.ExtremeHeat => Alert.CreateExtremeHeatAlert(FarmId, FieldId, reason),
-            AlertType.Frost => Alert.CreateFrostAlert(FarmId, FieldId, reason),
-            AlertType.DryAir => Alert.CreateDryAirAlert(FarmId, FieldId, reason),
-            AlertType.HumidAir => Alert.CreateHumidAirAlert(FarmId, FieldId, reason),
-            _ => Alert.CreateDrynessAlert(FarmId, FieldId, reason)
-        };
-
+        var alert = Alert.Create(type, FarmId, FieldId, reason);
         _alerts.Add(alert);
     }
 
@@ -245,46 +216,26 @@ public class Field
     /// </summary>
     private void ResolveAlert(AlertType type)
     {
-        Alert? activeAlert = _alerts.FirstOrDefault(a => a.AlertType == type && a.Status == AlertStatus.Active);
+        var activeAlert = _alerts.FirstOrDefault(a => a.AlertType == type && a.Status == AlertStatus.Active);
         activeAlert?.Resolve();
     }
 
     /// <summary>
     /// Atualiza o status do talhão baseado nos alertas ativos.
-    /// Prioriza alertas por severidade.
+    /// Usa severidade do AlertType para priorizar (menor = mais crítico).
     /// </summary>
     private void UpdateStatus()
     {
-        // Prioriza alertas por severidade (geada é mais crítica)
-        if (_frostAlertActive)
+        // Busca o alerta ativo mais crítico (menor severidade)
+        var mostCriticalAlert = _alerts
+            .Where(a => a.Status == AlertStatus.Active)
+            .OrderBy(a => a.AlertType.GetSeverity())
+            .FirstOrDefault();
+
+        if (mostCriticalAlert != null)
         {
-            Alert? alert = _alerts.FirstOrDefault(a => a.AlertType == AlertType.Frost && a.Status == AlertStatus.Active);
-            Status = FieldStatusType.FrostAlert;
-            StatusReason = alert?.Reason ?? "Alerta de geada ativo";
-        }
-        else if (_heatAlertActive)
-        {
-            Alert? alert = _alerts.FirstOrDefault(a => a.AlertType == AlertType.ExtremeHeat && a.Status == AlertStatus.Active);
-            Status = FieldStatusType.HeatAlert;
-            StatusReason = alert?.Reason ?? "Alerta de calor extremo ativo";
-        }
-        else if (_dryAlertActive)
-        {
-            Alert? alert = _alerts.FirstOrDefault(a => a.AlertType == AlertType.Dryness && a.Status == AlertStatus.Active);
-            Status = FieldStatusType.DryAlert;
-            StatusReason = alert?.Reason ?? "Alerta de seca ativo";
-        }
-        else if (_dryAirAlertActive)
-        {
-            Alert? alert = _alerts.FirstOrDefault(a => a.AlertType == AlertType.DryAir && a.Status == AlertStatus.Active);
-            Status = FieldStatusType.DryAirAlert;
-            StatusReason = alert?.Reason ?? "Alerta de ar seco ativo";
-        }
-        else if (_humidAirAlertActive)
-        {
-            Alert? alert = _alerts.FirstOrDefault(a => a.AlertType == AlertType.HumidAir && a.Status == AlertStatus.Active);
-            Status = FieldStatusType.HumidAirAlert;
-            StatusReason = alert?.Reason ?? "Alerta de ar úmido ativo";
+            Status = mostCriticalAlert.AlertType.ToFieldStatus();
+            StatusReason = mostCriticalAlert.Reason ?? mostCriticalAlert.AlertType.GetDefaultReason();
         }
         else
         {
@@ -292,6 +243,6 @@ public class Field
             StatusReason = "Condições dentro do esperado";
         }
 
-        UpdatedAt = DateTime.UtcNow;
+        UpdatedAt = DateTimeOffset.UtcNow;
     }
 }

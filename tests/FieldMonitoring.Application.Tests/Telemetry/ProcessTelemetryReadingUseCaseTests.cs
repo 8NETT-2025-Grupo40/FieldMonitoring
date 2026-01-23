@@ -80,7 +80,7 @@ public class ProcessTelemetryReadingUseCaseTests
             SensorId = "sensor-1",
             FieldId = "field-1",
             FarmId = "farm-1",
-            Timestamp = DateTime.UtcNow,
+            Timestamp = DateTimeOffset.UtcNow,
             SoilHumidity = 45.0,
             SoilTemperature = 25.0,
             RainMm = 2.5
@@ -107,7 +107,7 @@ public class ProcessTelemetryReadingUseCaseTests
             SensorId = "sensor-1",
             FieldId = "field-1",
             FarmId = "farm-1",
-            Timestamp = DateTime.UtcNow,
+            Timestamp = DateTimeOffset.UtcNow,
             SoilHumidity = 45.0,
             SoilTemperature = 25.0,
             RainMm = 2.5,

@@ -29,7 +29,7 @@ public class TelemetryIntegrationTests : IClassFixture<IntegrationTestFixture>
             .WithSoilMoisture(45.0)
             .WithTemperature(25.5)
             .WithRain(10.2)
-            .WithTimestamp(DateTime.UtcNow.AddHours(-1))
+            .WithTimestamp(DateTimeOffset.UtcNow.AddHours(-1))
             .Build();
 
         // Act - Processar telemetria
@@ -58,9 +58,9 @@ public class TelemetryIntegrationTests : IClassFixture<IntegrationTestFixture>
         // Arrange - Múltiplas leituras
         var messages = new[]
         {
-            new TelemetryMessageBuilder().ForField("field-T1", "farm-1").WithSoilMoisture(40.0).WithTimestamp(DateTime.UtcNow.AddHours(-3)).Build(),
-            new TelemetryMessageBuilder().ForField("field-T1", "farm-1").WithSoilMoisture(42.0).WithTimestamp(DateTime.UtcNow.AddHours(-2)).Build(),
-            new TelemetryMessageBuilder().ForField("field-T1", "farm-1").WithSoilMoisture(44.0).WithTimestamp(DateTime.UtcNow.AddHours(-1)).Build()
+            new TelemetryMessageBuilder().ForField("field-T1", "farm-1").WithSoilMoisture(40.0).WithTimestamp(DateTimeOffset.UtcNow.AddHours(-3)).Build(),
+            new TelemetryMessageBuilder().ForField("field-T1", "farm-1").WithSoilMoisture(42.0).WithTimestamp(DateTimeOffset.UtcNow.AddHours(-2)).Build(),
+            new TelemetryMessageBuilder().ForField("field-T1", "farm-1").WithSoilMoisture(44.0).WithTimestamp(DateTimeOffset.UtcNow.AddHours(-1)).Build()
         };
 
         using (var scope = _fixture.Services.CreateScope())
@@ -73,8 +73,8 @@ public class TelemetryIntegrationTests : IClassFixture<IntegrationTestFixture>
         }
 
         // Act - Buscar histórico
-        var from = DateTime.UtcNow.AddHours(-4);
-        var to = DateTime.UtcNow;
+        var from = DateTimeOffset.UtcNow.AddHours(-4);
+        var to = DateTimeOffset.UtcNow;
         var response = await _client.GetAsync($"/api/fields/field-T1/history?from={from:O}&to={to:O}");
         response.EnsureSuccessStatusCode();
 
@@ -92,7 +92,7 @@ public class TelemetryIntegrationTests : IClassFixture<IntegrationTestFixture>
         var message = new TelemetryMessageBuilder()
             .ForField("field-2", "farm-1")
             .WithSoilMoisture(50.0)
-            .WithTimestamp(DateTime.UtcNow)
+            .WithTimestamp(DateTimeOffset.UtcNow)
             .Build();
 
         // Act - Processar 2x
@@ -111,7 +111,7 @@ public class TelemetryIntegrationTests : IClassFixture<IntegrationTestFixture>
     public async Task Should_FilterByDateRange_WhenQueryingHistory()
     {
         // Arrange - Leituras em diferentes horários
-        var now = DateTime.UtcNow;
+        var now = DateTimeOffset.UtcNow;
         var messages = new[]
         {
             new TelemetryMessageBuilder().ForField("field-2", "farm-1").WithSoilMoisture(30.0).WithTimestamp(now.AddHours(-5)).Build(),

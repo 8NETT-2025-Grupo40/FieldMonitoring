@@ -15,5 +15,5 @@ public sealed record AlertEvent
     public required AlertStatus Status { get; init; }
     public string? Reason { get; init; }
     public int? Severity { get; init; }
-    public required DateTime OccurredAt { get; init; }
+    public required DateTimeOffset OccurredAt { get; init; }
 }

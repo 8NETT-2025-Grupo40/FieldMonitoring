@@ -19,7 +19,7 @@ public class ProcessedReading
     /// <summary>
     /// Timestamp de quando a leitura foi processada.
     /// </summary>
-    public DateTime ProcessedAt { get; set; } = DateTime.UtcNow;
+    public DateTimeOffset ProcessedAt { get; set; } = DateTimeOffset.UtcNow;
 
     /// <summary>
     /// Origem da leitura (HTTP ou MQTT).

@@ -31,12 +31,12 @@ public class HumidAirAlertIntegrationTests : IClassFixture<IntegrationTestFixtur
             new TelemetryMessageBuilder()
                 .ForField("field-humid-1", "farm-1")
                 .WithAirHumidity(92.0)
-                .WithTimestamp(DateTime.UtcNow.AddHours(-13))
+                .WithTimestamp(DateTimeOffset.UtcNow.AddHours(-13))
                 .Build(),
             new TelemetryMessageBuilder()
                 .ForField("field-humid-1", "farm-1")
                 .WithAirHumidity(95.0)
-                .WithTimestamp(DateTime.UtcNow)
+                .WithTimestamp(DateTimeOffset.UtcNow)
                 .Build()
         };
 
@@ -70,12 +70,12 @@ public class HumidAirAlertIntegrationTests : IClassFixture<IntegrationTestFixtur
             new TelemetryMessageBuilder()
                 .ForField("field-humid-2", "farm-1")
                 .WithAirHumidity(92.0)
-                .WithTimestamp(DateTime.UtcNow.AddHours(-14))
+                .WithTimestamp(DateTimeOffset.UtcNow.AddHours(-14))
                 .Build(),
             new TelemetryMessageBuilder()
                 .ForField("field-humid-2", "farm-1")
                 .WithAirHumidity(95.0)
-                .WithTimestamp(DateTime.UtcNow.AddHours(-1))
+                .WithTimestamp(DateTimeOffset.UtcNow.AddHours(-1))
                 .Build()
         };
 
@@ -97,7 +97,7 @@ public class HumidAirAlertIntegrationTests : IClassFixture<IntegrationTestFixtur
         var recoveryMessage = new TelemetryMessageBuilder()
             .ForField("field-humid-2", "farm-1")
             .WithAirHumidity(70.0)
-            .WithTimestamp(DateTime.UtcNow)
+            .WithTimestamp(DateTimeOffset.UtcNow)
             .Build();
 
         using (var scope = _fixture.Services.CreateScope())
@@ -128,12 +128,12 @@ public class HumidAirAlertIntegrationTests : IClassFixture<IntegrationTestFixtur
             new TelemetryMessageBuilder()
                 .ForField("field-humid-3", "farm-1")
                 .WithAirHumidity(90.0)
-                .WithTimestamp(DateTime.UtcNow.AddHours(-13))
+                .WithTimestamp(DateTimeOffset.UtcNow.AddHours(-13))
                 .Build(),
             new TelemetryMessageBuilder()
                 .ForField("field-humid-3", "farm-1")
                 .WithAirHumidity(90.0)
-                .WithTimestamp(DateTime.UtcNow)
+                .WithTimestamp(DateTimeOffset.UtcNow)
                 .Build()
         };
 
@@ -164,12 +164,12 @@ public class HumidAirAlertIntegrationTests : IClassFixture<IntegrationTestFixtur
             new TelemetryMessageBuilder()
                 .ForField("field-humid-4", "farm-1")
                 .WithAirHumidity(92.0)
-                .WithTimestamp(DateTime.UtcNow.AddHours(-14))
+                .WithTimestamp(DateTimeOffset.UtcNow.AddHours(-14))
                 .Build(),
             new TelemetryMessageBuilder()
                 .ForField("field-humid-4", "farm-1")
                 .WithAirHumidity(95.0)
-                .WithTimestamp(DateTime.UtcNow.AddHours(-1))
+                .WithTimestamp(DateTimeOffset.UtcNow.AddHours(-1))
                 .Build()
         };
 
@@ -186,7 +186,7 @@ public class HumidAirAlertIntegrationTests : IClassFixture<IntegrationTestFixtur
         var recoveryMessage = new TelemetryMessageBuilder()
             .ForField("field-humid-4", "farm-1")
             .WithAirHumidity(90.0)
-            .WithTimestamp(DateTime.UtcNow)
+            .WithTimestamp(DateTimeOffset.UtcNow)
             .Build();
 
         using (var scope = _fixture.Services.CreateScope())
@@ -211,12 +211,12 @@ public class HumidAirAlertIntegrationTests : IClassFixture<IntegrationTestFixtur
             new TelemetryMessageBuilder()
                 .ForField("field-humid-5", "farm-1")
                 .WithAirHumidity(92.0)
-                .WithTimestamp(DateTime.UtcNow.AddHours(-6))
+                .WithTimestamp(DateTimeOffset.UtcNow.AddHours(-6))
                 .Build(),
             new TelemetryMessageBuilder()
                 .ForField("field-humid-5", "farm-1")
                 .WithAirHumidity(95.0)
-                .WithTimestamp(DateTime.UtcNow)
+                .WithTimestamp(DateTimeOffset.UtcNow)
                 .Build()
         };
 
@@ -247,12 +247,12 @@ public class HumidAirAlertIntegrationTests : IClassFixture<IntegrationTestFixtur
             new TelemetryMessageBuilder()
                 .ForField("field-humid-6", "farm-1")
                 .WithSoilMoisture(50.0) // Apenas umidade do solo
-                .WithTimestamp(DateTime.UtcNow.AddHours(-13))
+                .WithTimestamp(DateTimeOffset.UtcNow.AddHours(-13))
                 .Build(),
             new TelemetryMessageBuilder()
                 .ForField("field-humid-6", "farm-1")
                 .WithSoilMoisture(50.0)
-                .WithTimestamp(DateTime.UtcNow)
+                .WithTimestamp(DateTimeOffset.UtcNow)
                 .Build()
         };
 
@@ -283,12 +283,12 @@ public class HumidAirAlertIntegrationTests : IClassFixture<IntegrationTestFixtur
             new TelemetryMessageBuilder()
                 .ForField("field-humid-7", "farm-1")
                 .WithAirHumidity(100.0)
-                .WithTimestamp(DateTime.UtcNow.AddHours(-13))
+                .WithTimestamp(DateTimeOffset.UtcNow.AddHours(-13))
                 .Build(),
             new TelemetryMessageBuilder()
                 .ForField("field-humid-7", "farm-1")
                 .WithAirHumidity(100.0)
-                .WithTimestamp(DateTime.UtcNow)
+                .WithTimestamp(DateTimeOffset.UtcNow)
                 .Build()
         };
 

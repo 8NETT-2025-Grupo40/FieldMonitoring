@@ -31,12 +31,12 @@ public class FrostAlertIntegrationTests : IClassFixture<IntegrationTestFixture>
             new TelemetryMessageBuilder()
                 .ForField("field-frost-1", "farm-1")
                 .WithAirTemperature(0.5)
-                .WithTimestamp(DateTime.UtcNow.AddHours(-3))
+                .WithTimestamp(DateTimeOffset.UtcNow.AddHours(-3))
                 .Build(),
             new TelemetryMessageBuilder()
                 .ForField("field-frost-1", "farm-1")
                 .WithAirTemperature(1.0)
-                .WithTimestamp(DateTime.UtcNow)
+                .WithTimestamp(DateTimeOffset.UtcNow)
                 .Build()
         };
 
@@ -70,12 +70,12 @@ public class FrostAlertIntegrationTests : IClassFixture<IntegrationTestFixture>
             new TelemetryMessageBuilder()
                 .ForField("field-frost-2", "farm-1")
                 .WithAirTemperature(0.5)
-                .WithTimestamp(DateTime.UtcNow.AddHours(-4))
+                .WithTimestamp(DateTimeOffset.UtcNow.AddHours(-4))
                 .Build(),
             new TelemetryMessageBuilder()
                 .ForField("field-frost-2", "farm-1")
                 .WithAirTemperature(1.0)
-                .WithTimestamp(DateTime.UtcNow.AddHours(-1))
+                .WithTimestamp(DateTimeOffset.UtcNow.AddHours(-1))
                 .Build()
         };
 
@@ -97,7 +97,7 @@ public class FrostAlertIntegrationTests : IClassFixture<IntegrationTestFixture>
         var recoveryMessage = new TelemetryMessageBuilder()
             .ForField("field-frost-2", "farm-1")
             .WithAirTemperature(5.0)
-            .WithTimestamp(DateTime.UtcNow)
+            .WithTimestamp(DateTimeOffset.UtcNow)
             .Build();
 
         using (var scope = _fixture.Services.CreateScope())
@@ -128,12 +128,12 @@ public class FrostAlertIntegrationTests : IClassFixture<IntegrationTestFixture>
             new TelemetryMessageBuilder()
                 .ForField("field-frost-3", "farm-1")
                 .WithAirTemperature(2.0)
-                .WithTimestamp(DateTime.UtcNow.AddHours(-3))
+                .WithTimestamp(DateTimeOffset.UtcNow.AddHours(-3))
                 .Build(),
             new TelemetryMessageBuilder()
                 .ForField("field-frost-3", "farm-1")
                 .WithAirTemperature(2.0)
-                .WithTimestamp(DateTime.UtcNow)
+                .WithTimestamp(DateTimeOffset.UtcNow)
                 .Build()
         };
 
@@ -164,12 +164,12 @@ public class FrostAlertIntegrationTests : IClassFixture<IntegrationTestFixture>
             new TelemetryMessageBuilder()
                 .ForField("field-frost-4", "farm-1")
                 .WithAirTemperature(0.5)
-                .WithTimestamp(DateTime.UtcNow.AddHours(-4))
+                .WithTimestamp(DateTimeOffset.UtcNow.AddHours(-4))
                 .Build(),
             new TelemetryMessageBuilder()
                 .ForField("field-frost-4", "farm-1")
                 .WithAirTemperature(1.0)
-                .WithTimestamp(DateTime.UtcNow.AddHours(-1))
+                .WithTimestamp(DateTimeOffset.UtcNow.AddHours(-1))
                 .Build()
         };
 
@@ -186,7 +186,7 @@ public class FrostAlertIntegrationTests : IClassFixture<IntegrationTestFixture>
         var recoveryMessage = new TelemetryMessageBuilder()
             .ForField("field-frost-4", "farm-1")
             .WithAirTemperature(2.0)
-            .WithTimestamp(DateTime.UtcNow)
+            .WithTimestamp(DateTimeOffset.UtcNow)
             .Build();
 
         using (var scope = _fixture.Services.CreateScope())
@@ -211,12 +211,12 @@ public class FrostAlertIntegrationTests : IClassFixture<IntegrationTestFixture>
             new TelemetryMessageBuilder()
                 .ForField("field-frost-5", "farm-1")
                 .WithAirTemperature(0.5)
-                .WithTimestamp(DateTime.UtcNow.AddHours(-1))
+                .WithTimestamp(DateTimeOffset.UtcNow.AddHours(-1))
                 .Build(),
             new TelemetryMessageBuilder()
                 .ForField("field-frost-5", "farm-1")
                 .WithAirTemperature(1.0)
-                .WithTimestamp(DateTime.UtcNow)
+                .WithTimestamp(DateTimeOffset.UtcNow)
                 .Build()
         };
 
@@ -247,12 +247,12 @@ public class FrostAlertIntegrationTests : IClassFixture<IntegrationTestFixture>
             new TelemetryMessageBuilder()
                 .ForField("field-frost-6", "farm-1")
                 .WithAirTemperature(-2.0)
-                .WithTimestamp(DateTime.UtcNow.AddHours(-3))
+                .WithTimestamp(DateTimeOffset.UtcNow.AddHours(-3))
                 .Build(),
             new TelemetryMessageBuilder()
                 .ForField("field-frost-6", "farm-1")
                 .WithAirTemperature(-1.5)
-                .WithTimestamp(DateTime.UtcNow)
+                .WithTimestamp(DateTimeOffset.UtcNow)
                 .Build()
         };
 

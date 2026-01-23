@@ -49,127 +49,63 @@ public class Alert
     /// <summary>
     /// Timestamp de quando a condição de alerta iniciou.
     /// </summary>
-    public DateTime StartedAt { get; set; } = DateTime.UtcNow;
+    public DateTimeOffset StartedAt { get; set; } = DateTimeOffset.UtcNow;
 
     /// <summary>
     /// Timestamp de quando o alerta foi resolvido (null se ainda ativo).
     /// </summary>
-    public DateTime? ResolvedAt { get; set; }
+    public DateTimeOffset? ResolvedAt { get; set; }
 
     /// <summary>
     /// Timestamp de quando o registro do alerta foi criado.
     /// </summary>
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
 
     /// <summary>
     /// Marca o alerta como resolvido.
     /// Chamado quando a condição que gerou o alerta volta ao normal.
     /// </summary>
-    public void Resolve(DateTime? resolvedAt = null)
+    public void Resolve(DateTimeOffset? resolvedAt = null)
     {
         Status = AlertStatus.Resolved;
-        ResolvedAt = resolvedAt ?? DateTime.UtcNow;
+        ResolvedAt = resolvedAt ?? DateTimeOffset.UtcNow;
     }
 
     /// <summary>
-    /// Cria um novo alerta de seca para um talhão.
+    /// Cria um novo alerta para um talhão.
+    /// Factory unificada que substitui os métodos individuais por tipo.
     /// </summary>
+    public static Alert Create(AlertType type, string farmId, string fieldId, string reason)
+    {
+        return new Alert
+        {
+            FarmId = farmId,
+            FieldId = fieldId,
+            AlertType = type,
+            Severity = type.GetSeverity(),
+            Reason = reason,
+            Status = AlertStatus.Active,
+            StartedAt = DateTimeOffset.UtcNow,
+            CreatedAt = DateTimeOffset.UtcNow
+        };
+    }
+
+    // Factory methods legados mantidos para compatibilidade
     public static Alert CreateDrynessAlert(string farmId, string fieldId, string reason)
-    {
-        return new Alert
-        {
-            FarmId = farmId,
-            FieldId = fieldId,
-            AlertType = AlertType.Dryness,
-            Reason = reason,
-            Status = AlertStatus.Active,
-            StartedAt = DateTime.UtcNow,
-            CreatedAt = DateTime.UtcNow
-        };
-    }
+        => Create(AlertType.Dryness, farmId, fieldId, reason);
 
-    /// <summary>
-    /// Cria um novo alerta de risco de pragas para um talhão.
-    /// </summary>
     public static Alert CreatePestRiskAlert(string farmId, string fieldId, string reason)
-    {
-        return new Alert
-        {
-            FarmId = farmId,
-            FieldId = fieldId,
-            AlertType = AlertType.PestRisk,
-            Reason = reason,
-            Status = AlertStatus.Active,
-            StartedAt = DateTime.UtcNow,
-            CreatedAt = DateTime.UtcNow
-        };
-    }
+        => Create(AlertType.PestRisk, farmId, fieldId, reason);
 
-    /// <summary>
-    /// Cria um novo alerta de calor extremo para um talhão.
-    /// </summary>
     public static Alert CreateExtremeHeatAlert(string farmId, string fieldId, string reason)
-    {
-        return new Alert
-        {
-            FarmId = farmId,
-            FieldId = fieldId,
-            AlertType = AlertType.ExtremeHeat,
-            Reason = reason,
-            Status = AlertStatus.Active,
-            StartedAt = DateTime.UtcNow,
-            CreatedAt = DateTime.UtcNow
-        };
-    }
+        => Create(AlertType.ExtremeHeat, farmId, fieldId, reason);
 
-    /// <summary>
-    /// Cria um novo alerta de geada para um talhão.
-    /// </summary>
     public static Alert CreateFrostAlert(string farmId, string fieldId, string reason)
-    {
-        return new Alert
-        {
-            FarmId = farmId,
-            FieldId = fieldId,
-            AlertType = AlertType.Frost,
-            Reason = reason,
-            Status = AlertStatus.Active,
-            StartedAt = DateTime.UtcNow,
-            CreatedAt = DateTime.UtcNow
-        };
-    }
+        => Create(AlertType.Frost, farmId, fieldId, reason);
 
-    /// <summary>
-    /// Cria um novo alerta de ar seco para um talhão.
-    /// </summary>
     public static Alert CreateDryAirAlert(string farmId, string fieldId, string reason)
-    {
-        return new Alert
-        {
-            FarmId = farmId,
-            FieldId = fieldId,
-            AlertType = AlertType.DryAir,
-            Reason = reason,
-            Status = AlertStatus.Active,
-            StartedAt = DateTime.UtcNow,
-            CreatedAt = DateTime.UtcNow
-        };
-    }
+        => Create(AlertType.DryAir, farmId, fieldId, reason);
 
-    /// <summary>
-    /// Cria um novo alerta de ar úmido para um talhão.
-    /// </summary>
     public static Alert CreateHumidAirAlert(string farmId, string fieldId, string reason)
-    {
-        return new Alert
-        {
-            FarmId = farmId,
-            FieldId = fieldId,
-            AlertType = AlertType.HumidAir,
-            Reason = reason,
-            Status = AlertStatus.Active,
-            StartedAt = DateTime.UtcNow,
-            CreatedAt = DateTime.UtcNow
-        };
-    }
+        => Create(AlertType.HumidAir, farmId, fieldId, reason);
 }

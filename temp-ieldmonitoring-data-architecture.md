@@ -91,13 +91,13 @@ Tags são “chaves de filtro/agrupamento”. Mantenha **poucas e estáveis** pa
 - `rainMm` (float)
 
 ### 4.5 Timestamp
-- usar o `timestamp` da leitura (hora da medição), não hora de chegada.
+- usar o `timestamp` da leitura com offset (hora da medição), não hora de chegada.
 
 ### 4.6 Exemplo conceitual de ponto
 - measurement: `field_readings`
 - tags: `farmId=F1`, `fieldId=T1`, `source=http`
 - fields: `soilMoisturePercent=27.3`, `temperatureC=33.1`, `rainMm=0`
-- time: `2026-01-06T14:22:00Z`
+- time: `2026-01-06T14:22:00-03:00`
 
 ### 4.7 Consultas esperadas (para gráficos)
 - histórico do talhão: `fieldId` + período (`from/to`)
@@ -116,7 +116,7 @@ Se optar por Mongo time-series, o desenho funcional é:
 Documento (alto nível):
 ```json
 {
-  "timestamp": "2026-01-06T14:22:00Z",
+  "timestamp": "2026-01-06T14:22:00-03:00",
   "meta": { "farmId": "F1", "fieldId": "T1", "source": "http" },
   "soilMoisturePercent": 27.3,
   "temperatureC": 33.1,
@@ -445,7 +445,7 @@ Status de Implementação MVP
 - [ ] Adicionar flag "Sem dados recentes" (NoRecentData status)
 - [ ] Implementar `ProcessingFailures` para debug/reprocessamento
 - [ ] Regras de praga (PestRisk alerts)
-- [ ] Autenticação/Autorização AWS Cognito (estrutura já existea de idempotência.
+- [ ] Autenticação/Autorização AWS Cognito (estrutura já existe)
 
 ## 11) Decisões Técnicas do MVP (Implementadas)
 
@@ -467,7 +467,7 @@ Status de Implementação MVP
   "readingId": "string (único para idempotência)",
   "fieldId": "string",
   "farmId": "string",
-  "timestamp": "ISO 8601 datetime",
+  "timestamp": "ISO 8601 datetime com offset",
   "soilMoisturePercent": "double (0-100)",
   "temperatureC": "double",
   "rainMm": "double (>=0)",

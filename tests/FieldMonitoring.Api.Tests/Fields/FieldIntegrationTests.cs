@@ -29,7 +29,7 @@ public class FieldIntegrationTests : IClassFixture<IntegrationTestFixture>
         var normalReading = new TelemetryMessageBuilder()
             .ForField("field-3", "farm-1")
             .WithSoilMoisture(40.0)
-            .WithTimestamp(DateTime.UtcNow.AddHours(-30))
+            .WithTimestamp(DateTimeOffset.UtcNow.AddHours(-30))
             .Build();
 
         using (var scope = _fixture.Services.CreateScope())
@@ -46,7 +46,7 @@ public class FieldIntegrationTests : IClassFixture<IntegrationTestFixture>
         var dryReading = new TelemetryMessageBuilder()
             .ForField("field-3", "farm-1")
             .WithSoilMoisture(20.0)
-            .WithTimestamp(DateTime.UtcNow.AddHours(-1))
+            .WithTimestamp(DateTimeOffset.UtcNow.AddHours(-1))
             .Build();
 
         using (var scope = _fixture.Services.CreateScope())
@@ -64,7 +64,7 @@ public class FieldIntegrationTests : IClassFixture<IntegrationTestFixture>
         var recoveryReading = new TelemetryMessageBuilder()
             .ForField("field-3", "farm-1")
             .WithSoilMoisture(45.0)
-            .WithTimestamp(DateTime.UtcNow)
+            .WithTimestamp(DateTimeOffset.UtcNow)
             .Build();
 
         using (var scope = _fixture.Services.CreateScope())

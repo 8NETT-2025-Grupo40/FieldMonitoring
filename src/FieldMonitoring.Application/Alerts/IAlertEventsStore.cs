@@ -1,7 +1,7 @@
 namespace FieldMonitoring.Application.Alerts;
 
 /// <summary>
-/// Port para gravacao de eventos de alerta em time-series.
+/// Port para gravação de eventos de alerta em time-series.
 /// </summary>
 public interface IAlertEventsStore
 {

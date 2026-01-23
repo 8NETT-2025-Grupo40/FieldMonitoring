@@ -1,3 +1,4 @@
+// ModelBinding removed: use native DateTimeOffset binder for query params
 using FieldMonitoring.Application.Alerts;
 using FieldMonitoring.Application.Fields;
 using FieldMonitoring.Application.Telemetry;
@@ -53,16 +54,15 @@ public class FieldsController : ControllerBase
     [ProducesResponseType(typeof(IReadOnlyList<ReadingDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IReadOnlyList<ReadingDto>>> GetHistory(
         string fieldId,
-        [FromQuery] DateTime from,
-        [FromQuery] DateTime? to,
+        [FromQuery] string? from,
+        [FromQuery] string? to,
         CancellationToken cancellationToken = default)
     {
-        if (!to.HasValue)
-        {
-            to = DateTime.Now;
-        }
+        // Parse query params using a tolerant parser; accept encoded '+' or spaces.
+        var parsedTo = FieldMonitoring.Api.Utilities.QueryDateTimeOffsetParser.Parse(to) ?? DateTimeOffset.UtcNow;
+        var parsedFrom = FieldMonitoring.Api.Utilities.QueryDateTimeOffsetParser.Parse(from) ?? parsedTo.AddDays(-1);
 
-        IReadOnlyList<ReadingDto> readings = await _fieldHistoryQuery.ExecuteAsync(fieldId, from, to.Value, cancellationToken);
+        IReadOnlyList<ReadingDto> readings = await _fieldHistoryQuery.ExecuteAsync(fieldId, parsedFrom, parsedTo, cancellationToken);
         return Ok(readings);
     }
 
@@ -85,8 +85,8 @@ public class FieldsController : ControllerBase
     [ProducesResponseType(typeof(IReadOnlyList<AlertDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IReadOnlyList<AlertDto>>> GetAlertHistory(
         string fieldId,
-        [FromQuery] DateTime? from,
-        [FromQuery] DateTime? to,
+        [FromQuery] DateTimeOffset? from,
+        [FromQuery] DateTimeOffset? to,
         CancellationToken cancellationToken)
     {
         IReadOnlyList<AlertDto> result = await _alertHistoryQuery.ExecuteByFieldAsync(fieldId, from, to, cancellationToken);

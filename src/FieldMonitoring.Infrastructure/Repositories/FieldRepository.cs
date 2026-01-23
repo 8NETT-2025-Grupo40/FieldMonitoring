@@ -33,7 +33,7 @@ public class FieldRepository : IFieldRepository
             return null;
 
         // Sincroniza estado interno _dryAlertActive com os alertas carregados
-        field.SyncDryAlertState();
+        field.SyncAlertStates();
 
         return field;
     }

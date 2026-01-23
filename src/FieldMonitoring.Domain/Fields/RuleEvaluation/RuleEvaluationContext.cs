@@ -1,22 +1,55 @@
+using FieldMonitoring.Domain.Alerts;
+using FieldMonitoring.Domain.Rules;
+
 namespace FieldMonitoring.Domain.Fields.RuleEvaluation;
 
 /// <summary>
 /// Contexto passado para os avaliadores de regras.
-/// Contem os timestamps e flags de alerta necessarios para avaliacao.
+/// Usa Dictionaries genéricos para evitar adicionar propriedades para cada nova regra.
 /// </summary>
 internal sealed class RuleEvaluationContext
 {
-    // Timestamps de quando a condicao estava normal
-    public DateTime? LastTimeAboveDryThreshold { get; set; }
-    public DateTime? LastTimeBelowHeatThreshold { get; set; }
-    public DateTime? LastTimeAboveFrostThreshold { get; set; }
-    public DateTime? LastTimeAboveDryAirThreshold { get; set; }
-    public DateTime? LastTimeBelowHumidAirThreshold { get; set; }
+    /// <summary>
+    /// Timestamps de quando cada regra estava em condição normal.
+    /// Chave: RuleType, Valor: última vez que a condição estava OK.
+    /// </summary>
+    public Dictionary<RuleType, DateTimeOffset?> LastTimeNormal { get; } = new();
 
-    // Flags de alerta ativo
-    public bool DryAlertActive { get; set; }
-    public bool HeatAlertActive { get; set; }
-    public bool FrostAlertActive { get; set; }
-    public bool DryAirAlertActive { get; set; }
-    public bool HumidAirAlertActive { get; set; }
+    /// <summary>
+    /// Flags indicando se cada tipo de alerta está ativo.
+    /// Chave: AlertType, Valor: true se alerta ativo.
+    /// </summary>
+    public Dictionary<AlertType, bool> ActiveAlerts { get; } = new();
+
+    /// <summary>
+    /// Obtém o timestamp da última vez que a regra estava normal.
+    /// </summary>
+    public DateTimeOffset? GetLastTimeNormal(RuleType ruleType)
+    {
+        return LastTimeNormal.TryGetValue(ruleType, out var timestamp) ? timestamp : null;
+    }
+
+    /// <summary>
+    /// Define o timestamp da última vez que a regra estava normal.
+    /// </summary>
+    public void SetLastTimeNormal(RuleType ruleType, DateTimeOffset? timestamp)
+    {
+        LastTimeNormal[ruleType] = timestamp;
+    }
+
+    /// <summary>
+    /// Verifica se um tipo de alerta está ativo.
+    /// </summary>
+    public bool IsAlertActive(AlertType alertType)
+    {
+        return ActiveAlerts.TryGetValue(alertType, out var isActive) && isActive;
+    }
+
+    /// <summary>
+    /// Define se um tipo de alerta está ativo.
+    /// </summary>
+    public void SetAlertActive(AlertType alertType, bool isActive)
+    {
+        ActiveAlerts[alertType] = isActive;
+    }
 }

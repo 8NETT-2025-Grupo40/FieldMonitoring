@@ -1,5 +1,6 @@
 using FieldMonitoring.Api.Extensions;
 using FieldMonitoring.Application;
+using FieldMonitoring.Application.Serialization;
 using FieldMonitoring.Infrastructure;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
@@ -14,10 +15,14 @@ builder.Services.AddInfrastructureServices(builder.Configuration);
 builder.Services.AddSqsMessaging(builder.Configuration);
 
 // Adiciona autenticação e autorização com AWS Cognito
-//builder.Services.AddCognitoUserAuthentication(builder.Configuration);
+builder.Services.AddCognitoUserAuthentication(builder.Configuration);
 
 // Adiciona serviços de API
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(new StrictDateTimeOffsetJsonConverter());
+    });
 builder.Services.AddSwaggerDocumentation();
 
 WebApplication app = builder.Build();

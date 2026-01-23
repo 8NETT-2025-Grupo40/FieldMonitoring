@@ -34,8 +34,8 @@ public class SqlServerAlertAdapter : IAlertStore
 
     public async Task<IReadOnlyList<Alert>> GetByFieldAsync(
         string fieldId, 
-        DateTime? from = null, 
-        DateTime? to = null, 
+        DateTimeOffset? from = null, 
+        DateTimeOffset? to = null, 
         CancellationToken cancellationToken = default)
     {
         IQueryable<Alert> query = _dbContext.Alerts.Where(x => x.FieldId == fieldId);
@@ -53,8 +53,8 @@ public class SqlServerAlertAdapter : IAlertStore
 
     public async Task<IReadOnlyList<Alert>> GetByFarmAsync(
         string farmId, 
-        DateTime? from = null, 
-        DateTime? to = null, 
+        DateTimeOffset? from = null, 
+        DateTimeOffset? to = null, 
         CancellationToken cancellationToken = default)
     {
         IQueryable<Alert> query = _dbContext.Alerts.Where(x => x.FarmId == farmId);

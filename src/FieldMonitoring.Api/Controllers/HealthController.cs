@@ -13,7 +13,7 @@ public class HealthController : ControllerBase
         return Ok(new
         {
             Status = "Healthy",
-            Timestamp = DateTime.UtcNow
+            Timestamp = DateTimeOffset.UtcNow
         });
     }
 }

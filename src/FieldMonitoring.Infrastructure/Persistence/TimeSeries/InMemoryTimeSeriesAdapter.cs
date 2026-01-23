@@ -27,8 +27,8 @@ public class InMemoryTimeSeriesAdapter : ITimeSeriesReadingsStore
 
     public Task<IReadOnlyList<SensorReading>> GetByPeriodAsync(
         string fieldId,
-        DateTime from,
-        DateTime to,
+        DateTimeOffset from,
+        DateTimeOffset to,
         CancellationToken cancellationToken = default)
     {
         lock (_lock)

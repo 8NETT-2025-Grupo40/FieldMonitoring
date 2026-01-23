@@ -5,7 +5,7 @@ using FieldMonitoring.Domain.Telemetry;
 namespace FieldMonitoring.Domain.Fields.RuleEvaluation;
 
 /// <summary>
-/// Avaliador da regra de ar umido (HumidAir).
+/// Avaliador da regra de ar úmido (HumidAir).
 /// Gera alerta quando a umidade do ar fica acima do threshold por tempo >= WindowHours.
 /// </summary>
 internal sealed class HumidAirRuleEvaluator : RuleEvaluatorBase
@@ -21,15 +21,15 @@ internal sealed class HumidAirRuleEvaluator : RuleEvaluatorBase
         AirHumidity thresholdHumidity = AirHumidity.FromPercent(rule.Threshold).Value!;
         var windowHours = rule.WindowHours;
 
-        // Umidade abaixo ou igual ao threshold = condicao normal
+        // Umidade abaixo ou igual ao threshold = condição normal
         if (reading.AirHumidity.IsBelow(thresholdHumidity) || 
             reading.AirHumidity.Percent == thresholdHumidity.Percent)
         {
-            context.LastTimeBelowHumidAirThreshold = reading.Timestamp;
+            context.SetLastTimeNormal(RuleType, reading.Timestamp);
 
-            if (context.HumidAirAlertActive)
+            if (context.IsAlertActive(AlertType))
             {
-                context.HumidAirAlertActive = false;
+                context.SetAlertActive(AlertType, false);
                 return RuleEvaluationResult.ResolveAlert();
             }
 
@@ -37,19 +37,21 @@ internal sealed class HumidAirRuleEvaluator : RuleEvaluatorBase
         }
 
         // Umidade acima do threshold - primeira leitura inicializa tracking
-        if (context.LastTimeBelowHumidAirThreshold == null)
+        var lastTimeNormal = context.GetLastTimeNormal(RuleType);
+        if (lastTimeNormal == null)
         {
-            context.LastTimeBelowHumidAirThreshold = reading.Timestamp;
+            context.SetLastTimeNormal(RuleType, reading.Timestamp);
+            lastTimeNormal = reading.Timestamp;
         }
 
         // Verifica se excedeu a janela de tempo
-        if (IsConditionExceeded(context.LastTimeBelowHumidAirThreshold, windowHours, reading.Timestamp) && 
-            !context.HumidAirAlertActive)
+        if (IsConditionExceeded(lastTimeNormal, windowHours, reading.Timestamp) && 
+            !context.IsAlertActive(AlertType))
         {
-            var hoursAbove = (reading.Timestamp - context.LastTimeBelowHumidAirThreshold!.Value).TotalHours;
+            var hoursAbove = (reading.Timestamp - lastTimeNormal!.Value).TotalHours;
             var reason = $"Umidade do ar acima de {thresholdHumidity.Percent}% por {hoursAbove:F0} horas";
             
-            context.HumidAirAlertActive = true;
+            context.SetAlertActive(AlertType, true);
             return RuleEvaluationResult.RaiseAlert(reason);
         }
 

@@ -27,5 +27,5 @@ public class HealthControllerTests : IClassFixture<TestWebApplicationFactory>
         content!.Status.Should().Be("Healthy");
     }
 
-    private record HealthResponse(string Status, DateTime Timestamp);
+    private record HealthResponse(string Status, DateTimeOffset Timestamp);
 }

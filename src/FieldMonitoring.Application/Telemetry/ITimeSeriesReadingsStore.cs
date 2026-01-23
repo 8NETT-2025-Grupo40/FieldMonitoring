@@ -18,7 +18,7 @@ public interface ITimeSeriesReadingsStore
     /// </summary>
     Task<IReadOnlyList<SensorReading>> GetByPeriodAsync(
         string fieldId,
-        DateTime from,
-        DateTime to,
+        DateTimeOffset from,
+        DateTimeOffset to,
         CancellationToken cancellationToken = default);
 }

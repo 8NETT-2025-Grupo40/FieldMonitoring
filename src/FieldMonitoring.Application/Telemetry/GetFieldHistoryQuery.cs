@@ -19,8 +19,8 @@ public class GetFieldHistoryQuery
     /// </summary>
     public async Task<IReadOnlyList<ReadingDto>> ExecuteAsync(
         string fieldId,
-        DateTime from,
-        DateTime to,
+        DateTimeOffset from,
+        DateTimeOffset to,
         CancellationToken cancellationToken = default)
     {
         IReadOnlyList<SensorReading> readings = await _timeSeriesStore.GetByPeriodAsync(fieldId, from, to, cancellationToken);

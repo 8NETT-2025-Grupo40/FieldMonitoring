@@ -2,7 +2,6 @@ using FieldMonitoring.Application.Alerts;
 using InfluxDB.Client;
 using InfluxDB.Client.Api.Domain;
 using InfluxDB.Client.Writes;
-using Microsoft.Extensions.Logging;
 
 namespace FieldMonitoring.Infrastructure.Persistence.TimeSeries;
 
@@ -16,17 +15,16 @@ public sealed class InfluxAlertEventsAdapter : IAlertEventsStore, IDisposable
     private const string TagAlertType = "alertType";
     private const string FieldAlertId = "alertId";
     private const string FieldStatus = "status";
+    private const string FieldActive = "active";
     private const string FieldReason = "reason";
     private const string FieldSeverity = "severity";
 
     private readonly InfluxDbOptions _options;
     private readonly InfluxDBClient _client;
-    private readonly ILogger<InfluxAlertEventsAdapter> _logger;
 
-    public InfluxAlertEventsAdapter(InfluxDbOptions options, ILogger<InfluxAlertEventsAdapter> logger)
+    public InfluxAlertEventsAdapter(InfluxDbOptions options)
     {
         _options = options ?? throw new ArgumentNullException(nameof(options));
-        _logger = logger;
 
         if (!_options.IsConfigured())
         {
@@ -38,21 +36,9 @@ public sealed class InfluxAlertEventsAdapter : IAlertEventsStore, IDisposable
 
     public async Task AppendAsync(AlertEvent alertEvent, CancellationToken cancellationToken = default)
     {
-        try
-        {
-            PointData point = BuildPoint(alertEvent);
-            var writeApi = _client.GetWriteApiAsync();
-            await writeApi.WritePointAsync(point, _options.Bucket!, _options.Org!, cancellationToken);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex,
-                "Failed to write alert event {AlertId} for field {FieldId} to InfluxDb bucket {Bucket}",
-                alertEvent.AlertId,
-                alertEvent.FieldId,
-                _options.Bucket);
-            throw;
-        }
+        PointData point = BuildPoint(alertEvent);
+        var writeApi = _client.GetWriteApiAsync();
+        await writeApi.WritePointAsync(point, _options.Bucket!, _options.Org!, cancellationToken);
     }
 
     public void Dispose()
@@ -69,6 +55,7 @@ public sealed class InfluxAlertEventsAdapter : IAlertEventsStore, IDisposable
             .Tag(TagAlertType, alertEvent.AlertType.ToString())
             .Field(FieldAlertId, alertEvent.AlertId.ToString())
             .Field(FieldStatus, alertEvent.Status.ToString())
+            .Field(FieldActive, alertEvent.Status == Domain.Alerts.AlertStatus.Active ? 1 : 0)
             .Timestamp(NormalizeTimestamp(alertEvent.OccurredAt), WritePrecision.Ns);
 
         if (!string.IsNullOrWhiteSpace(alertEvent.Reason))
@@ -84,18 +71,8 @@ public sealed class InfluxAlertEventsAdapter : IAlertEventsStore, IDisposable
         return point;
     }
 
-    private static DateTime NormalizeTimestamp(DateTime timestamp)
+    private static DateTime NormalizeTimestamp(DateTimeOffset timestamp)
     {
-        if (timestamp.Kind == DateTimeKind.Utc)
-        {
-            return timestamp;
-        }
-
-        if (timestamp.Kind == DateTimeKind.Local)
-        {
-            return timestamp.ToUniversalTime();
-        }
-
-        return DateTime.SpecifyKind(timestamp, DateTimeKind.Utc);
+        return timestamp.UtcDateTime;
     }
 }

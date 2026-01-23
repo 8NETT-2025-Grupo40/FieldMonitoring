@@ -30,7 +30,7 @@ public sealed record SensorReading
     /// <summary>
     /// Timestamp de quando a medição foi feita (hora do sensor, não de chegada).
     /// </summary>
-    public required DateTime Timestamp { get; init; }
+    public required DateTimeOffset Timestamp { get; init; }
 
     /// <summary>
     /// Umidade do solo (Value Object com validação 0-100%).
@@ -74,7 +74,7 @@ public sealed record SensorReading
         string sensorId,
         string fieldId,
         string farmId,
-        DateTime timestamp,
+        DateTimeOffset timestamp,
         double soilMoisturePercent,
         double soilTemperatureC,
         double rainMm,
