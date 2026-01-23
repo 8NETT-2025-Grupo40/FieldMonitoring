@@ -1,0 +1,94 @@
+name: FieldMonitoring CI/CD
+
+on:
+  push:
+    branches: [ 'main' ]
+  pull_request:
+    types: [opened, synchronize]
+
+env:
+  AWS_REGION: us-east-1
+  AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+  ECR_REPOSITORY: fcg-payment-api
+  ECR_REPOSITORY_WIREMOCK: fcg-psp-wiremock
+  EKS_CLUSTER: fcg
+  K8S_NAMESPACE: fcg
+  HELM_RELEASE_NAME: payment-api
+
+jobs:
+  build:
+    name: Build the solution
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Restore and build
+        run: |
+          dotnet restore FieldMonitoring.slnx
+          dotnet build --no-restore --configuration Release FieldMonitoring.slnx
+
+      - name: Upload build output
+        uses: actions/upload-artifact@v4
+        with:
+          name: Build Output
+          path: |
+            ./
+
+  tests:
+    name: Run unit tests
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v4
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: Build Output
+          path: ./build_result
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Unit Tests
+        run: dotnet test ./build_result/FieldMonitoring.slnx --logger trx --results-directory "Results"
+
+      - name: Upload test result
+        uses: actions/upload-artifact@v4
+        with:
+          name: Test Results
+          path: "Results"
+        if: ${{ always() }}
+
+      - name: Test Report
+        uses: dorny/test-reporter@v2
+        if: always()
+        with:
+          name: .NET Tests Report
+          path: "**/*.trx"
+          reporter: dotnet-trx
+          fail-on-error: true
+
+  docker-build:
+    name: Build Docker image
+    needs: build
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'pull_request' }}
+
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: docker build -t fieldmonitoring-api:ci .

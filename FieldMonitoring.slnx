@@ -1,0 +1,13 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/FieldMonitoring.Domain/FieldMonitoring.Domain.csproj" />
+    <Project Path="src/FieldMonitoring.Application/FieldMonitoring.Application.csproj" />
+    <Project Path="src/FieldMonitoring.Infrastructure/FieldMonitoring.Infrastructure.csproj" />
+    <Project Path="src/FieldMonitoring.Api/FieldMonitoring.Api.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/FieldMonitoring.Domain.Tests/FieldMonitoring.Domain.Tests.csproj" />
+    <Project Path="tests/FieldMonitoring.Application.Tests/FieldMonitoring.Application.Tests.csproj" />
+    <Project Path="tests/FieldMonitoring.Api.Tests/FieldMonitoring.Api.Tests.csproj" />
+  </Folder>
+</Solution>
