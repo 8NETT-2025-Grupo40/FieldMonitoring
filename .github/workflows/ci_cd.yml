@@ -1,3 +1,19 @@
+# ============================================================
+# FieldMonitoring CI/CD Pipeline
+#
+# AWS PREREQUISITES (create before first deploy):
+# 1. Secrets Manager: field-monitoring-connection-string
+# 2. Secrets Manager: field-monitoring-influxdb-token
+# 3. Secrets Manager: field-monitoring-sqs-queue-url
+# 4. Secrets Manager: field-monitoring-cognito-config (JSON)
+#    JSON format: {"region":"us-east-1","userPoolId":"...","clientId":"..."}
+# 5. IAM Policy: infrastructure/iam/field-monitoring-policy.json
+#
+# EKS CLUSTER: agro-tech
+# NAMESPACE: field-monitoring
+# External Secrets Operator: installed (cluster-wide)
+# ============================================================
+
 name: FieldMonitoring CI/CD
 
 on:
@@ -8,12 +24,13 @@ on:
 
 env:
   AWS_REGION: us-east-1
-  AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
-  ECR_REPOSITORY: fcg-payment-api
-  ECR_REPOSITORY_WIREMOCK: fcg-psp-wiremock
-  EKS_CLUSTER: fcg
-  K8S_NAMESPACE: fcg
-  HELM_RELEASE_NAME: payment-api
+  AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID_TEMP }}
+  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID_TEMP }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY_TEMP }}
+  ECR_REPOSITORY: field-monitoring-api
+  EKS_CLUSTER: agro-tech
+  K8S_NAMESPACE: field-monitoring
+  HELM_RELEASE_NAME: field-monitoring
 
 jobs:
   build:
@@ -80,15 +97,205 @@ jobs:
           reporter: dotnet-trx
           fail-on-error: true
 
-  docker-build:
-    name: Build Docker image
-    needs: build
+  build-push:
+    name: Build and Push Docker Image
+    needs: [build, tests]
     runs-on: ubuntu-latest
-    if: ${{ github.event_name == 'pull_request' }}
+    outputs:
+      image-tag: ${{ steps.meta.outputs.tags }}
 
     steps:
-      - name: Check out repository code
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Build Docker image
-        run: docker build -t fieldmonitoring-api:ci .
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ env.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ env.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Validate AWS account
+        run: |
+          ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+          echo "Using AWS account: $ACCOUNT_ID"
+          if [ "$ACCOUNT_ID" != "${{ env.AWS_ACCOUNT_ID }}" ]; then
+            echo "Account mismatch. Expected ${{ env.AWS_ACCOUNT_ID }}"
+            exit 1
+          fi
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Generate Docker metadata
+        id: meta
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        run: |
+          IMAGE_TAG="${{ github.sha }}"
+          echo "tags=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
+          echo "latest=$ECR_REGISTRY/$ECR_REPOSITORY:latest" >> $GITHUB_OUTPUT
+
+      - name: Build and Push API Image
+        env:
+          IMAGE_TAG: ${{ steps.meta.outputs.tags }}
+          IMAGE_LATEST: ${{ steps.meta.outputs.latest }}
+        run: |
+          echo "Building FieldMonitoring API Docker image..."
+          docker build -t $IMAGE_TAG -t $IMAGE_LATEST .
+
+          echo "Pushing to ECR..."
+          docker push $IMAGE_TAG
+          docker push $IMAGE_LATEST
+
+          echo "FieldMonitoring API image pushed: $IMAGE_TAG"
+
+  deploy-eks:
+    name: Deploy to EKS
+    needs: [build-push]
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ env.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ env.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Validate AWS account
+        run: |
+          ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+          echo "Using AWS account: $ACCOUNT_ID"
+          if [ "$ACCOUNT_ID" != "${{ env.AWS_ACCOUNT_ID }}" ]; then
+            echo "Account mismatch. Expected ${{ env.AWS_ACCOUNT_ID }}"
+            exit 1
+          fi
+
+      - name: Update kubeconfig
+        run: |
+          aws eks update-kubeconfig --region ${{ env.AWS_REGION }} --name ${{ env.EKS_CLUSTER }}
+          kubectl cluster-info
+
+      - name: Install eksctl
+        run: |
+          curl -sLO "https://github.com/eksctl-io/eksctl/releases/latest/download/eksctl_Linux_amd64.tar.gz"
+          tar -xzf eksctl_Linux_amd64.tar.gz -C /tmp
+          sudo mv /tmp/eksctl /usr/local/bin
+          eksctl version
+
+      - name: Install Helm
+        run: |
+          curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+          helm version
+
+      - name: Wait for External Secrets CRDs
+        run: |
+          echo "Verifying External Secrets Operator CRDs..."
+
+          for i in {1..24}; do
+            if kubectl get crd externalsecrets.external-secrets.io >/dev/null 2>&1 && \
+               kubectl get crd secretstores.external-secrets.io >/dev/null 2>&1; then
+              echo "External Secrets CRDs are available"
+              exit 0
+            fi
+            echo "Waiting for CRDs... attempt $i/24"
+            sleep 5
+          done
+
+          echo "ERROR: External Secrets CRDs not found after 120s"
+          exit 1
+
+      - name: Create/Update IRSA for FieldMonitoring API
+        run: |
+          echo "Checking if IRSA already exists..."
+          if kubectl get serviceaccount field-monitoring-api-sa -n ${{ env.K8S_NAMESPACE }} &>/dev/null; then
+            echo "ServiceAccount already exists, skipping IRSA creation"
+          else
+            echo "Creating IAM Policy if not exists..."
+            aws iam create-policy \
+              --policy-name FieldMonitoringAPIPolicy \
+              --policy-document file://infrastructure/iam/field-monitoring-policy.json \
+              --region ${{ env.AWS_REGION }} 2>/dev/null || echo "Policy already exists"
+
+            echo "Creating IRSA for field-monitoring-api-sa..."
+            eksctl create iamserviceaccount \
+              --cluster=${{ env.EKS_CLUSTER }} \
+              --namespace=${{ env.K8S_NAMESPACE }} \
+              --name=field-monitoring-api-sa \
+              --attach-policy-arn=arn:aws:iam::${{ env.AWS_ACCOUNT_ID }}:policy/FieldMonitoringAPIPolicy \
+              --approve \
+              --region=${{ env.AWS_REGION }}
+
+            echo "IRSA created successfully"
+            echo "Waiting 30s for IAM propagation..."
+            sleep 30
+          fi
+
+      - name: Deploy to EKS with Helm
+        env:
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          echo "Deploying FieldMonitoring API to EKS..."
+
+          helm upgrade --install ${{ env.HELM_RELEASE_NAME }} ./k8s \
+            --namespace ${{ env.K8S_NAMESPACE }} \
+            --create-namespace \
+            --set image.tag=$IMAGE_TAG \
+            --timeout 10m
+
+          echo "Helm deployment completed"
+
+      - name: Wait for External Secrets sync
+        run: |
+          echo "Waiting for External Secrets to sync..."
+
+          kubectl wait --for=condition=Ready \
+            externalsecret/${{ env.HELM_RELEASE_NAME }}-field-monitoring-api-externalsecret \
+            -n ${{ env.K8S_NAMESPACE }} \
+            --timeout=120s
+
+          echo "External Secrets synced successfully"
+
+      - name: Verify Deployment
+        run: |
+          echo "Verifying deployment rollout..."
+
+          DEPLOYMENT_NAME="${{ env.HELM_RELEASE_NAME }}-field-monitoring-api"
+
+          kubectl rollout status deployment/$DEPLOYMENT_NAME -n ${{ env.K8S_NAMESPACE }} --timeout=10m
+
+          echo ""
+          echo "Deployment completed successfully"
+          kubectl get pods -n ${{ env.K8S_NAMESPACE }} -l app.kubernetes.io/name=field-monitoring-api
+
+          echo ""
+          echo "Current pod status:"
+          kubectl get pods -n ${{ env.K8S_NAMESPACE }} -l app.kubernetes.io/name=field-monitoring-api -o wide
+
+      - name: Get ALB URL
+        run: |
+          INGRESS_NAME="${{ env.HELM_RELEASE_NAME }}-field-monitoring-api"
+
+          echo "Waiting for ALB to be provisioned..."
+          sleep 30
+
+          ALB_URL=$(kubectl get ingress -n ${{ env.K8S_NAMESPACE }} $INGRESS_NAME -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null || echo "")
+
+          if [ -z "$ALB_URL" ]; then
+            echo "ALB is being provisioned. Check status with:"
+            echo "kubectl get ingress -n ${{ env.K8S_NAMESPACE }}"
+          else
+            echo ""
+            echo "=========================================="
+            echo "DEPLOYMENT SUCCESSFUL"
+            echo "=========================================="
+            echo "FieldMonitoring API URL: http://$ALB_URL/monitoring"
+            echo "Swagger: http://$ALB_URL/monitoring/swagger"
+            echo "Health Check: http://$ALB_URL/monitoring/health"
+            echo "=========================================="
+          fi

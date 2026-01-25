@@ -1,0 +1,6 @@
+apiVersion: v2
+name: field-monitoring-api
+description: Field Monitoring API (ASP.NET 10) para monitoramento de campos agricolas no Amazon EKS
+type: application
+version: 0.1.0
+appVersion: "1.0.0"

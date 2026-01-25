@@ -8,7 +8,7 @@ namespace FieldMonitoring.Api.Controllers;
 /// Endpoints de API para operações de alertas.
 /// </summary>
 [ApiController]
-[Route("api/[controller]")]
+[Route("monitoring/[controller]")]
 public class AlertsController : ControllerBase
 {
     private readonly IAlertStore _alertStore;

@@ -37,7 +37,7 @@ public class QueryEncodingTests : IClassFixture<IntegrationTestFixture>
         var to = now;
 
         // Act - unencoded (may contain '+')
-        var response = await _client.GetAsync($"/api/fields/field-QE-1/history?from={from:O}&to={to:O}");
+        var response = await _client.GetAsync($"/monitoring/fields/field-QE-1/history?from={from:O}&to={to:O}");
         response.EnsureSuccessStatusCode();
 
         var readings = await response.Content.ReadFromJsonAsync<List<ReadingDto>>();
@@ -68,7 +68,7 @@ public class QueryEncodingTests : IClassFixture<IntegrationTestFixture>
         var et = Uri.EscapeDataString(to);
 
         // Act - encoded
-        var response = await _client.GetAsync($"/api/fields/field-QE-2/history?from={ef}&to={et}");
+        var response = await _client.GetAsync($"/monitoring/fields/field-QE-2/history?from={ef}&to={et}");
         response.EnsureSuccessStatusCode();
 
         var readings = await response.Content.ReadFromJsonAsync<List<ReadingDto>>();

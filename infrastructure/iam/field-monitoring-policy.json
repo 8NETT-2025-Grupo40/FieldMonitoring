@@ -1,0 +1,26 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "secretsmanager:GetSecretValue"
+      ],
+      "Resource": [
+        "arn:aws:secretsmanager:us-east-1:951042686167:secret:field-monitoring-connection-string-*",
+        "arn:aws:secretsmanager:us-east-1:951042686167:secret:field-monitoring-influxdb-token-*",
+        "arn:aws:secretsmanager:us-east-1:951042686167:secret:field-monitoring-sqs-queue-url-*",
+        "arn:aws:secretsmanager:us-east-1:951042686167:secret:field-monitoring-cognito-config-*"
+      ]
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "sqs:ReceiveMessage",
+        "sqs:DeleteMessage",
+        "sqs:GetQueueAttributes"
+      ],
+      "Resource": "arn:aws:sqs:us-east-1:951042686167:field-monitoring-*"
+    }
+  ]
+}

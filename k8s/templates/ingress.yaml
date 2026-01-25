@@ -1,0 +1,30 @@
+{{- if .Values.ingress.enabled }}
+# Ingress: define regras de roteamento HTTP/HTTPS
+# O AWS Load Balancer Controller converte isso em um ALB (Application Load Balancer)
+# Compartilhado com outras APIs via group.name: agro-tech
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "field-monitoring-api.fullname" . }}
+  labels:
+    {{- include "field-monitoring-api.labels" . | nindent 4 }}
+  annotations:
+    {{- toYaml .Values.ingress.annotations | nindent 4 }}
+spec:
+  ingressClassName: {{ .Values.ingress.className }}
+  rules:
+    - {{- if .Values.ingress.host }}
+      host: {{ .Values.ingress.host }}
+      {{- end }}
+      http:
+        paths:
+          {{- range .Values.ingress.paths }}
+          - path: {{ .path }}
+            pathType: {{ .pathType }}
+            backend:
+              service:
+                name: {{ include "field-monitoring-api.fullname" $ }}
+                port:
+                  number: {{ $.Values.service.port }}
+          {{- end }}
+{{- end }}

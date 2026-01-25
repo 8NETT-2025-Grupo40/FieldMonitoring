@@ -1,0 +1,108 @@
+# Deployment: gerencia os pods da aplicacao (Field Monitoring API)
+# CloudWatch Application Signals coleta traces automaticamente via DaemonSet
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "field-monitoring-api.fullname" . }}
+  labels:
+    {{- include "field-monitoring-api.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "field-monitoring-api.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "field-monitoring-api.selectorLabels" . | nindent 8 }}
+    spec:
+      serviceAccountName: {{ include "field-monitoring-api.serviceAccountName" . }}
+      # Graceful shutdown para SQS Consumer finalizar processamento
+      terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds }}
+      containers:
+        - name: api
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.containerPort }}
+              protocol: TCP
+          env:
+            # Variaveis nao sensiveis (hardcoded)
+            - name: ASPNETCORE_URLS
+              value: {{ .Values.env.ASPNETCORE_URLS | quote }}
+            - name: ASPNETCORE_ENVIRONMENT
+              value: {{ .Values.env.ASPNETCORE_ENVIRONMENT | quote }}
+            - name: AWS__Region
+              value: {{ .Values.env.AWS__Region | quote }}
+            # InfluxDB (dentro do cluster)
+            - name: InfluxDb__Url
+              value: {{ .Values.env.InfluxDb__Url | quote }}
+            - name: InfluxDb__Org
+              value: {{ .Values.env.InfluxDb__Org | quote }}
+            - name: InfluxDb__Bucket
+              value: {{ .Values.env.InfluxDb__Bucket | quote }}
+            - name: InfluxDb__Measurement
+              value: {{ .Values.env.InfluxDb__Measurement | quote }}
+            - name: InfluxDb__AlertMeasurement
+              value: {{ .Values.env.InfluxDb__AlertMeasurement | quote }}
+            - name: InfluxDb__Enabled
+              value: {{ .Values.env.InfluxDb__Enabled | quote }}
+            # SQS
+            - name: Sqs__Region
+              value: {{ .Values.env.Sqs__Region | quote }}
+            - name: Sqs__MaxNumberOfMessages
+              value: {{ .Values.env.Sqs__MaxNumberOfMessages | quote }}
+            - name: Sqs__WaitTimeSeconds
+              value: {{ .Values.env.Sqs__WaitTimeSeconds | quote }}
+            - name: Sqs__VisibilityTimeout
+              value: {{ .Values.env.Sqs__VisibilityTimeout | quote }}
+            - name: Sqs__Enabled
+              value: {{ .Values.env.Sqs__Enabled | quote }}
+            # OTEL para CloudWatch Agent DaemonSet (Application Signals)
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: {{ .Values.env.OTEL_EXPORTER_OTLP_ENDPOINT | quote }}
+            # Secrets sensiveis (External Secrets -> Kubernetes Secret)
+            - name: ConnectionStrings__SqlServer
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "field-monitoring-api.fullname" . }}-secrets
+                  key: connectionString
+            - name: InfluxDb__Token
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "field-monitoring-api.fullname" . }}-secrets
+                  key: influxDbToken
+            - name: Sqs__QueueUrl
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "field-monitoring-api.fullname" . }}-secrets
+                  key: sqsQueueUrl
+            # Cognito config (extraido do JSON secret)
+            - name: COGNITO_REGION
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "field-monitoring-api.fullname" . }}-secrets
+                  key: cognitoRegion
+            - name: COGNITO_USER_POOL_ID
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "field-monitoring-api.fullname" . }}-secrets
+                  key: cognitoUserPoolId
+            - name: COGNITO_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "field-monitoring-api.fullname" . }}-secrets
+                  key: cognitoClientId
+          livenessProbe:
+            {{- toYaml .Values.livenessProbe | nindent 12 }}
+          readinessProbe:
+            {{- toYaml .Values.readinessProbe | nindent 12 }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}

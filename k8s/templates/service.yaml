@@ -1,0 +1,18 @@
+# Service: expoe os pods internamente no cluster
+# ClusterIP = apenas acessivel dentro do cluster
+# O Ingress (ALB) roteia trafego externo para este Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "field-monitoring-api.fullname" . }}
+  labels:
+    {{- include "field-monitoring-api.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: {{ .Values.service.targetPort }}
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "field-monitoring-api.selectorLabels" . | nindent 4 }}

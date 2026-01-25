@@ -16,7 +16,7 @@ public class FieldsControllerTests : IClassFixture<TestWebApplicationFactory>
     public async Task GetDetail_WhenFieldDoesNotExist_ShouldReturnNotFound()
     {
         // Act
-        HttpResponseMessage response = await _client.GetAsync("/api/fields/non-existent-field");
+        HttpResponseMessage response = await _client.GetAsync("/monitoring/fields/non-existent-field");
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
@@ -30,7 +30,7 @@ public class FieldsControllerTests : IClassFixture<TestWebApplicationFactory>
         var to = DateTimeOffset.UtcNow.ToString("o");
 
         // Act
-        HttpResponseMessage response = await _client.GetAsync($"/api/fields/new-field/history?from={from}&to={to}");
+        HttpResponseMessage response = await _client.GetAsync($"/monitoring/fields/new-field/history?from={from}&to={to}");
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);

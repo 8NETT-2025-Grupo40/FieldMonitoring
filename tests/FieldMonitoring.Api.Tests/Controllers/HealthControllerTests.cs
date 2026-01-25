@@ -17,7 +17,7 @@ public class HealthControllerTests : IClassFixture<TestWebApplicationFactory>
     public async Task GetHealth_ShouldReturnOk()
     {
         // Act
-        HttpResponseMessage response = await _client.GetAsync("/api/health");
+        HttpResponseMessage response = await _client.GetAsync("/monitoring/health");
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);

@@ -10,7 +10,7 @@ namespace FieldMonitoring.Api.Controllers;
 /// </summary>
 [AllowAnonymous]
 [ApiController]
-[Route("api/[controller]")]
+[Route("monitoring/[controller]")]
 public class SimulationController : ControllerBase
 {
     private readonly ProcessTelemetryReadingUseCase _useCase;

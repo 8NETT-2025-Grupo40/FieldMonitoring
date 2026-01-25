@@ -41,7 +41,7 @@ public class AlertIntegrationTests : IClassFixture<IntegrationTestFixture>
         }
 
         // Act - Consultar alertas ativos
-        var response = await _client.GetAsync("/api/fields/field-A1/alerts");
+        var response = await _client.GetAsync("/monitoring/fields/field-A1/alerts");
         response.EnsureSuccessStatusCode();
 
         // Assert
@@ -85,12 +85,12 @@ public class AlertIntegrationTests : IClassFixture<IntegrationTestFixture>
         }
 
         // Assert - Alerta deve estar resolvido
-        var activeResponse = await _client.GetAsync("/api/fields/field-A2/alerts");
+        var activeResponse = await _client.GetAsync("/monitoring/fields/field-A2/alerts");
         var activeAlerts = await activeResponse.Content.ReadFromJsonAsync<List<AlertDto>>();
         activeAlerts.Should().NotBeNull();
         activeAlerts!.Should().BeEmpty();
 
-        var historyResponse = await _client.GetAsync("/api/fields/field-A2/alerts/history");
+        var historyResponse = await _client.GetAsync("/monitoring/fields/field-A2/alerts/history");
         var historyAlerts = await historyResponse.Content.ReadFromJsonAsync<List<AlertDto>>();
         historyAlerts.Should().NotBeNull();
         historyAlerts!.Should().HaveCount(1);
@@ -119,7 +119,7 @@ public class AlertIntegrationTests : IClassFixture<IntegrationTestFixture>
         }
 
         // Act
-        var response = await _client.GetAsync("/api/fields/field-A6/alerts");
+        var response = await _client.GetAsync("/monitoring/fields/field-A6/alerts");
         var alerts = await response.Content.ReadFromJsonAsync<List<AlertDto>>();
 
         // Assert - Não deve criar alerta
@@ -149,7 +149,7 @@ public class AlertIntegrationTests : IClassFixture<IntegrationTestFixture>
         }
 
         // Act
-        var response = await _client.GetAsync("/api/fields/field-A7/alerts");
+        var response = await _client.GetAsync("/monitoring/fields/field-A7/alerts");
         var alerts = await response.Content.ReadFromJsonAsync<List<AlertDto>>();
 
         // Assert - Deve ter apenas 1 alerta

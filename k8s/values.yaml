@@ -1,0 +1,130 @@
+# Configuracao da imagem Docker no ECR (Elastic Container Registry)
+# O workflow do GitHub Actions sobrescreve a tag com o SHA do commit
+image:
+  repository: "951042686167.dkr.ecr.us-east-1.amazonaws.com/field-monitoring-api"
+  tag: "latest"
+  pullPolicy: IfNotPresent
+
+# Numero de pods que serao criados inicialmente
+# O HPA (Horizontal Pod Autoscaler) pode aumentar/diminuir baseado em carga
+replicaCount: 1
+
+# Porta do container
+containerPort: 5066
+
+# Service expoe os pods internamente no cluster
+# ClusterIP = apenas acessivel dentro do cluster (nao exposto externamente)
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 5066
+
+# Ingress cria um ALB (Application Load Balancer) para acesso externo
+# O AWS Load Balancer Controller converte esse recurso em um ALB real na AWS
+# Compartilhado com outras APIs via group.name: agro-tech
+ingress:
+  enabled: true
+  className: alb  # usa o AWS Load Balancer Controller
+  host: ""  # deixe vazio para aceitar qualquer hostname
+  annotations:
+    # scheme: internet-facing = ALB publico (acessivel pela internet)
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    # target-type: ip = ALB roteia diretamente para IPs dos pods (mais eficiente)
+    alb.ingress.kubernetes.io/target-type: ip
+    # group.name: permite multiplos Ingress compartilharem o mesmo ALB
+    # Todas as APIs agro-tech usarao o mesmo ALB
+    alb.ingress.kubernetes.io/group.name: agro-tech
+    # healthcheck-path: endpoint usado pelo ALB para verificar saude dos pods
+    alb.ingress.kubernetes.io/healthcheck-path: /monitoring/health
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP":80}]'
+  
+  # Path unico para FieldMonitoring - todas as rotas comecam com /monitoring
+  paths:
+    - path: /monitoring
+      pathType: Prefix
+
+# Recursos garantidos (requests) e limites (limits) para cada container
+# requests: Kubernetes garante esses recursos ao agendar o pod
+# limits: Valores maximos que o container pode usar (exceder memory = pod e morto)
+resources:
+  requests:
+    cpu: 150m      # 0.15 CPU
+    memory: 256Mi  # 256 megabytes
+  limits:
+    cpu: 750m      # 0.75 CPU
+    memory: 768Mi  # 768 megabytes
+
+# Variaveis de ambiente nao sensiveis (valores publicos)
+env:
+  ASPNETCORE_URLS: "http://+:5066"
+  ASPNETCORE_ENVIRONMENT: "Production"
+  AWS__Region: "us-east-1"
+  # InfluxDB (dentro do cluster - namespace influxdb)
+  InfluxDb__Url: "http://influxdb.influxdb.svc.cluster.local:8086"
+  InfluxDb__Org: "agro-org"
+  InfluxDb__Bucket: "sensores"
+  InfluxDb__Measurement: "telemetry_readings"
+  InfluxDb__AlertMeasurement: "field_alerts"
+  InfluxDb__Enabled: "true"
+  # SQS
+  Sqs__Region: "us-east-1"
+  Sqs__MaxNumberOfMessages: "10"
+  Sqs__WaitTimeSeconds: "20"
+  Sqs__VisibilityTimeout: "30"
+  Sqs__Enabled: "true"
+  # OTEL envia traces para CloudWatch Agent DaemonSet (Application Signals)
+  OTEL_EXPORTER_OTLP_ENDPOINT: "http://cloudwatch-agent.amazon-cloudwatch.svc.cluster.local:4315"
+
+# Secrets sensiveis sao gerenciados pelo External Secrets Operator
+# Sincroniza automaticamente do AWS Secrets Manager para Kubernetes Secrets
+secrets:
+  # Connection string do SQL Server/RDS
+  connectionString:
+    awsSecretName: "field-monitoring-connection-string"
+  # Token do InfluxDB
+  influxDbToken:
+    awsSecretName: "field-monitoring-influxdb-token"
+  # URL da fila SQS
+  sqsQueueUrl:
+    awsSecretName: "field-monitoring-sqs-queue-url"
+  # Configuracoes do Cognito (JSON: region, userPoolId, clientId)
+  cognitoConfig:
+    awsSecretName: "field-monitoring-cognito-config"
+
+# HPA (Horizontal Pod Autoscaler) - escalonamento automatico baseado em metricas
+# Aumenta/diminui numero de pods automaticamente baseado em carga
+autoscaling:
+  enabled: true
+  minReplicas: 1
+  maxReplicas: 3
+  cpu: 60         # escala quando CPU media > 60%
+  memory: 70      # escala quando memoria media > 70%
+
+# ServiceAccount com IRSA (IAM Roles for Service Accounts)
+# Permite que pods assumam roles IAM sem credenciais estaticas
+serviceAccount:
+  create: false  # false porque o eksctl cria durante o deploy (workflow)
+  name: "field-monitoring-api-sa"  # deve corresponder ao nome usado no workflow
+  annotations: {}  # eksctl injeta automaticamente eks.amazonaws.com/role-arn
+
+# Tempo de espera para graceful shutdown
+terminationGracePeriodSeconds: 30
+
+# Probes de saude
+livenessProbe:
+  httpGet:
+    path: /monitoring/health
+    port: 5066
+  initialDelaySeconds: 30
+  periodSeconds: 20
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+readinessProbe:
+  httpGet:
+    path: /monitoring/health
+    port: 5066
+  initialDelaySeconds: 10
+  periodSeconds: 10
+  timeoutSeconds: 3
+  failureThreshold: 3
