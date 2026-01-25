@@ -10,7 +10,7 @@ namespace FieldMonitoring.Api.Controllers;
 /// Fornece visão geral dos talhões e alertas agregados por fazenda.
 /// </summary>
 [ApiController]
-[Route("api/[controller]")]
+[Route("monitoring/[controller]")]
 public class FarmsController : ControllerBase
 {
     private readonly GetFarmOverviewQuery _farmOverviewQuery;

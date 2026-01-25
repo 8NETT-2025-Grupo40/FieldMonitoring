@@ -57,7 +57,7 @@ public class FieldStatusPriorityIntegrationTests : IClassFixture<IntegrationTest
         }
 
         // Verificar que Heat foi ativado
-        var heatCheck = await _client.GetAsync($"/api/fields/{fieldId}");
+        var heatCheck = await _client.GetAsync($"/monitoring/fields/{fieldId}");
         var fieldAfterHeat = await heatCheck.Content.ReadFromJsonAsync<FieldDetailDto>();
         fieldAfterHeat!.Status.ToString().Should().Be("HeatAlert");
 
@@ -88,7 +88,7 @@ public class FieldStatusPriorityIntegrationTests : IClassFixture<IntegrationTest
         }
 
         // Act
-        var response = await _client.GetAsync($"/api/fields/{fieldId}");
+        var response = await _client.GetAsync($"/monitoring/fields/{fieldId}");
         var field = await response.Content.ReadFromJsonAsync<FieldDetailDto>();
 
         // Assert - Frost tem prioridade sobre Heat
@@ -130,7 +130,7 @@ public class FieldStatusPriorityIntegrationTests : IClassFixture<IntegrationTest
         }
 
         // Act
-        var response = await _client.GetAsync($"/api/fields/{fieldId}");
+        var response = await _client.GetAsync($"/monitoring/fields/{fieldId}");
         var field = await response.Content.ReadFromJsonAsync<FieldDetailDto>();
 
         // Assert - Heat tem prioridade sobre Dryness
@@ -170,7 +170,7 @@ public class FieldStatusPriorityIntegrationTests : IClassFixture<IntegrationTest
         }
 
         // Act
-        var response = await _client.GetAsync($"/api/fields/{fieldId}");
+        var response = await _client.GetAsync($"/monitoring/fields/{fieldId}");
         var field = await response.Content.ReadFromJsonAsync<FieldDetailDto>();
 
         // Assert - Dryness tem prioridade sobre DryAir
@@ -212,7 +212,7 @@ public class FieldStatusPriorityIntegrationTests : IClassFixture<IntegrationTest
         }
 
         // Act
-        var response = await _client.GetAsync($"/api/fields/{fieldId}");
+        var response = await _client.GetAsync($"/monitoring/fields/{fieldId}");
         var field = await response.Content.ReadFromJsonAsync<FieldDetailDto>();
 
         // Assert - DryAir é o único alerta ativo
@@ -247,7 +247,7 @@ public class FieldStatusPriorityIntegrationTests : IClassFixture<IntegrationTest
         }
 
         // Act
-        var response = await _client.GetAsync($"/api/fields/{fieldId}");
+        var response = await _client.GetAsync($"/monitoring/fields/{fieldId}");
         var field = await response.Content.ReadFromJsonAsync<FieldDetailDto>();
 
         // Assert - Status deve ser Normal
@@ -285,7 +285,7 @@ public class FieldStatusPriorityIntegrationTests : IClassFixture<IntegrationTest
         }
 
         // Verificar que alerta foi criado
-        var alertCheck = await _client.GetAsync($"/api/fields/{fieldId}");
+        var alertCheck = await _client.GetAsync($"/monitoring/fields/{fieldId}");
         var fieldWithAlert = await alertCheck.Content.ReadFromJsonAsync<FieldDetailDto>();
         fieldWithAlert!.Status.ToString().Should().Be("DryAlert");
 
@@ -303,7 +303,7 @@ public class FieldStatusPriorityIntegrationTests : IClassFixture<IntegrationTest
         }
 
         // Assert
-        var response = await _client.GetAsync($"/api/fields/{fieldId}");
+        var response = await _client.GetAsync($"/monitoring/fields/{fieldId}");
         var field = await response.Content.ReadFromJsonAsync<FieldDetailDto>();
         field!.Status.ToString().Should().Be("Normal");
     }
@@ -342,7 +342,7 @@ public class FieldStatusPriorityIntegrationTests : IClassFixture<IntegrationTest
         }
 
         // Act
-        var response = await _client.GetAsync($"/api/fields/{fieldId}");
+        var response = await _client.GetAsync($"/monitoring/fields/{fieldId}");
         var field = await response.Content.ReadFromJsonAsync<FieldDetailDto>();
 
         // Assert - HumidAir é o único alerta ativo

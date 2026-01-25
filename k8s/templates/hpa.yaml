@@ -1,0 +1,30 @@
+{{- if .Values.autoscaling.enabled }}
+# HPA (Horizontal Pod Autoscaler): escalonamento automatico de pods
+# Aumenta/diminui replicas baseado em metricas de CPU e memoria
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ include "field-monitoring-api.fullname" . }}
+  labels:
+    {{- include "field-monitoring-api.labels" . | nindent 4 }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ include "field-monitoring-api.fullname" . }}
+  minReplicas: {{ .Values.autoscaling.minReplicas }}
+  maxReplicas: {{ .Values.autoscaling.maxReplicas }}
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.autoscaling.cpu }}
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.autoscaling.memory }}
+{{- end }}

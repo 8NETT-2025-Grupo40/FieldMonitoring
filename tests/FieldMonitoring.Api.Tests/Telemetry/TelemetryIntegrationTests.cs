@@ -40,7 +40,7 @@ public class TelemetryIntegrationTests : IClassFixture<IntegrationTestFixture>
         }
 
         // Assert - Verificar via API
-        var response = await _client.GetAsync("/api/fields/field-1");
+        var response = await _client.GetAsync("/monitoring/fields/field-1");
         response.EnsureSuccessStatusCode();
 
         var field = await response.Content.ReadFromJsonAsync<Application.Fields.FieldDetailDto>();
@@ -75,7 +75,7 @@ public class TelemetryIntegrationTests : IClassFixture<IntegrationTestFixture>
         // Act - Buscar histórico
         var from = DateTimeOffset.UtcNow.AddHours(-4);
         var to = DateTimeOffset.UtcNow;
-        var response = await _client.GetAsync($"/api/fields/field-T1/history?from={from:O}&to={to:O}");
+        var response = await _client.GetAsync($"/monitoring/fields/field-T1/history?from={from:O}&to={to:O}");
         response.EnsureSuccessStatusCode();
 
         // Assert
@@ -131,7 +131,7 @@ public class TelemetryIntegrationTests : IClassFixture<IntegrationTestFixture>
         // Act - Filtrar apenas últimas 3 horas
         var from = now.AddHours(-3);
         var to = now;
-        var response = await _client.GetAsync($"/api/fields/field-2/history?from={from:O}&to={to:O}");
+        var response = await _client.GetAsync($"/monitoring/fields/field-2/history?from={from:O}&to={to:O}");
         response.EnsureSuccessStatusCode();
 
         // Assert - Deve retornar apenas 2 leituras

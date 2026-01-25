@@ -48,7 +48,7 @@ public class FarmIntegrationTests : IClassFixture<IntegrationTestFixture>
         }
 
         // Act
-        var response = await _client.GetAsync("/api/farms/farm-2/overview");
+        var response = await _client.GetAsync("/monitoring/farms/farm-2/overview");
         response.EnsureSuccessStatusCode();
 
         // Assert

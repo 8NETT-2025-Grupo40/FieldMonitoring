@@ -1,9 +1,11 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace FieldMonitoring.Api.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
+[AllowAnonymous]
+[Route("monitoring/[controller]")]
 public class HealthController : ControllerBase
 {
     [HttpGet]

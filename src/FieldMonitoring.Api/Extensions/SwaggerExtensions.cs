@@ -35,15 +35,16 @@ public static class SwaggerExtensions
 
     public static WebApplication UseSwaggerDocumentation(this WebApplication app)
     {
-        if (app.Environment.IsDevelopment())
+        // Swagger habilitado em todos os ambientes para facilitar testes no EKS
+        app.UseSwagger(c =>
         {
-            app.UseSwagger();
-            app.UseSwaggerUI(c =>
-            {
-                c.SwaggerEndpoint("/swagger/v1/swagger.json", "FieldMonitoring API Documentation");
-                c.RoutePrefix = string.Empty;
-            });
-        }
+            c.RouteTemplate = "monitoring/swagger/{documentName}/swagger.json";
+        });
+        app.UseSwaggerUI(c =>
+        {
+            c.SwaggerEndpoint("/monitoring/swagger/v1/swagger.json", "FieldMonitoring API v1");
+            c.RoutePrefix = "monitoring/swagger";
+        });
 
         return app;
     }

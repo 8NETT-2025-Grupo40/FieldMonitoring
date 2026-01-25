@@ -19,7 +19,7 @@ public class FarmsControllerTests : IClassFixture<TestWebApplicationFactory>
     public async Task GetOverview_ShouldReturnEmptyListForNewFarm()
     {
         // Act
-        HttpResponseMessage response = await _client.GetAsync("/api/farms/new-farm/overview");
+        HttpResponseMessage response = await _client.GetAsync("/monitoring/farms/new-farm/overview");
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -35,7 +35,7 @@ public class FarmsControllerTests : IClassFixture<TestWebApplicationFactory>
     public async Task GetActiveAlerts_ShouldReturnEmptyListForNewFarm()
     {
         // Act
-        HttpResponseMessage response = await _client.GetAsync("/api/farms/new-farm/alerts");
+        HttpResponseMessage response = await _client.GetAsync("/monitoring/farms/new-farm/alerts");
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);

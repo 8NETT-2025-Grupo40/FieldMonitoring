@@ -38,7 +38,7 @@ public class FieldIntegrationTests : IClassFixture<IntegrationTestFixture>
             await useCase.ExecuteAsync(normalReading);
         }
 
-        var response1 = await _client.GetAsync("/api/fields/field-3");
+        var response1 = await _client.GetAsync("/monitoring/fields/field-3");
         var field1 = await response1.Content.ReadFromJsonAsync<FieldDetailDto>();
         field1!.Status.ToString().Should().Be("Normal");
 
@@ -55,7 +55,7 @@ public class FieldIntegrationTests : IClassFixture<IntegrationTestFixture>
             await useCase.ExecuteAsync(dryReading);
         }
 
-        var response2 = await _client.GetAsync("/api/fields/field-3");
+        var response2 = await _client.GetAsync("/monitoring/fields/field-3");
         var field2 = await response2.Content.ReadFromJsonAsync<FieldDetailDto>();
         field2!.Status.ToString().Should().Be("DryAlert");
         field2.ActiveAlerts.Should().HaveCount(1);
@@ -73,7 +73,7 @@ public class FieldIntegrationTests : IClassFixture<IntegrationTestFixture>
             await useCase.ExecuteAsync(recoveryReading);
         }
 
-        var response3 = await _client.GetAsync("/api/fields/field-3");
+        var response3 = await _client.GetAsync("/monitoring/fields/field-3");
         var field3 = await response3.Content.ReadFromJsonAsync<FieldDetailDto>();
         field3!.Status.ToString().Should().Be("Normal");
         field3.ActiveAlerts.Should().BeEmpty();
@@ -83,7 +83,7 @@ public class FieldIntegrationTests : IClassFixture<IntegrationTestFixture>
     public async Task Should_Return404_WhenFieldDoesNotExist()
     {
         // Act
-        var response = await _client.GetAsync("/api/fields/non-existent-field-xyz");
+        var response = await _client.GetAsync("/monitoring/fields/non-existent-field-xyz");
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);

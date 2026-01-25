@@ -50,7 +50,7 @@ public class ExtremeHeatAlertIntegrationTests : IClassFixture<IntegrationTestFix
         }
 
         // Act - Consultar alertas ativos
-        var response = await _client.GetAsync("/api/fields/field-heat-1/alerts");
+        var response = await _client.GetAsync("/monitoring/fields/field-heat-1/alerts");
         response.EnsureSuccessStatusCode();
 
         // Assert
@@ -89,7 +89,7 @@ public class ExtremeHeatAlertIntegrationTests : IClassFixture<IntegrationTestFix
         }
 
         // Verificar que alerta foi criado
-        var checkResponse = await _client.GetAsync("/api/fields/field-heat-2/alerts");
+        var checkResponse = await _client.GetAsync("/monitoring/fields/field-heat-2/alerts");
         var checkAlerts = await checkResponse.Content.ReadFromJsonAsync<List<AlertDto>>();
         checkAlerts.Should().HaveCount(1, "alerta deveria ter sido criado");
 
@@ -107,12 +107,12 @@ public class ExtremeHeatAlertIntegrationTests : IClassFixture<IntegrationTestFix
         }
 
         // Assert - Alerta deve estar resolvido
-        var activeResponse = await _client.GetAsync("/api/fields/field-heat-2/alerts");
+        var activeResponse = await _client.GetAsync("/monitoring/fields/field-heat-2/alerts");
         var activeAlerts = await activeResponse.Content.ReadFromJsonAsync<List<AlertDto>>();
         activeAlerts.Should().NotBeNull();
         activeAlerts!.Should().BeEmpty();
 
-        var historyResponse = await _client.GetAsync("/api/fields/field-heat-2/alerts/history");
+        var historyResponse = await _client.GetAsync("/monitoring/fields/field-heat-2/alerts/history");
         var historyAlerts = await historyResponse.Content.ReadFromJsonAsync<List<AlertDto>>();
         historyAlerts.Should().NotBeNull();
         historyAlerts!.Should().HaveCount(1);
@@ -147,7 +147,7 @@ public class ExtremeHeatAlertIntegrationTests : IClassFixture<IntegrationTestFix
         }
 
         // Act
-        var response = await _client.GetAsync("/api/fields/field-heat-3/alerts");
+        var response = await _client.GetAsync("/monitoring/fields/field-heat-3/alerts");
         var alerts = await response.Content.ReadFromJsonAsync<List<AlertDto>>();
 
         // Assert - Não deve criar alerta (40°C exato é condição normal)
@@ -196,7 +196,7 @@ public class ExtremeHeatAlertIntegrationTests : IClassFixture<IntegrationTestFix
         }
 
         // Assert - Alerta deve estar resolvido
-        var activeResponse = await _client.GetAsync("/api/fields/field-heat-4/alerts");
+        var activeResponse = await _client.GetAsync("/monitoring/fields/field-heat-4/alerts");
         var activeAlerts = await activeResponse.Content.ReadFromJsonAsync<List<AlertDto>>();
         activeAlerts.Should().NotBeNull();
         activeAlerts!.Should().BeEmpty();
@@ -230,7 +230,7 @@ public class ExtremeHeatAlertIntegrationTests : IClassFixture<IntegrationTestFix
         }
 
         // Act
-        var response = await _client.GetAsync("/api/fields/field-heat-5/alerts");
+        var response = await _client.GetAsync("/monitoring/fields/field-heat-5/alerts");
         var alerts = await response.Content.ReadFromJsonAsync<List<AlertDto>>();
 
         // Assert - Não deve criar alerta (janela de 4h não foi atingida)
@@ -266,7 +266,7 @@ public class ExtremeHeatAlertIntegrationTests : IClassFixture<IntegrationTestFix
         }
 
         // Act
-        var response = await _client.GetAsync("/api/fields/field-heat-6/alerts");
+        var response = await _client.GetAsync("/monitoring/fields/field-heat-6/alerts");
         var alerts = await response.Content.ReadFromJsonAsync<List<AlertDto>>();
 
         // Assert - Não deve criar alerta de calor quando não há dados de temperatura do ar

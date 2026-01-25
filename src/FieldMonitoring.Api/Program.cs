@@ -23,6 +23,7 @@ builder.Services.AddControllers()
     {
         options.JsonSerializerOptions.Converters.Add(new StrictDateTimeOffsetJsonConverter());
     });
+
 builder.Services.AddSwaggerDocumentation();
 
 WebApplication app = builder.Build();
@@ -36,7 +37,6 @@ app.MapControllers();
 
 // Log de inicialização
 ILogger<Program> logger = app.Services.GetRequiredService<ILogger<Program>>();
-logger.LogInformation("FieldMonitoring iniciando...");
 
 app.Run();
 

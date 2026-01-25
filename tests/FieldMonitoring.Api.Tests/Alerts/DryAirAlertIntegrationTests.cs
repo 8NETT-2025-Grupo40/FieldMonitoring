@@ -50,7 +50,7 @@ public class DryAirAlertIntegrationTests : IClassFixture<IntegrationTestFixture>
         }
 
         // Act - Consultar alertas ativos
-        var response = await _client.GetAsync("/api/fields/field-dryair-1/alerts");
+        var response = await _client.GetAsync("/monitoring/fields/field-dryair-1/alerts");
         response.EnsureSuccessStatusCode();
 
         // Assert
@@ -89,7 +89,7 @@ public class DryAirAlertIntegrationTests : IClassFixture<IntegrationTestFixture>
         }
 
         // Verificar que alerta foi criado
-        var checkResponse = await _client.GetAsync("/api/fields/field-dryair-2/alerts");
+        var checkResponse = await _client.GetAsync("/monitoring/fields/field-dryair-2/alerts");
         var checkAlerts = await checkResponse.Content.ReadFromJsonAsync<List<AlertDto>>();
         checkAlerts.Should().HaveCount(1, "alerta deveria ter sido criado");
 
@@ -107,12 +107,12 @@ public class DryAirAlertIntegrationTests : IClassFixture<IntegrationTestFixture>
         }
 
         // Assert - Alerta deve estar resolvido
-        var activeResponse = await _client.GetAsync("/api/fields/field-dryair-2/alerts");
+        var activeResponse = await _client.GetAsync("/monitoring/fields/field-dryair-2/alerts");
         var activeAlerts = await activeResponse.Content.ReadFromJsonAsync<List<AlertDto>>();
         activeAlerts.Should().NotBeNull();
         activeAlerts!.Should().BeEmpty();
 
-        var historyResponse = await _client.GetAsync("/api/fields/field-dryair-2/alerts/history");
+        var historyResponse = await _client.GetAsync("/monitoring/fields/field-dryair-2/alerts/history");
         var historyAlerts = await historyResponse.Content.ReadFromJsonAsync<List<AlertDto>>();
         historyAlerts.Should().NotBeNull();
         historyAlerts!.Should().HaveCount(1);
@@ -147,7 +147,7 @@ public class DryAirAlertIntegrationTests : IClassFixture<IntegrationTestFixture>
         }
 
         // Act
-        var response = await _client.GetAsync("/api/fields/field-dryair-3/alerts");
+        var response = await _client.GetAsync("/monitoring/fields/field-dryair-3/alerts");
         var alerts = await response.Content.ReadFromJsonAsync<List<AlertDto>>();
 
         // Assert - Não deve criar alerta (20% exato é condição normal)
@@ -196,7 +196,7 @@ public class DryAirAlertIntegrationTests : IClassFixture<IntegrationTestFixture>
         }
 
         // Assert - Alerta deve estar resolvido
-        var activeResponse = await _client.GetAsync("/api/fields/field-dryair-4/alerts");
+        var activeResponse = await _client.GetAsync("/monitoring/fields/field-dryair-4/alerts");
         var activeAlerts = await activeResponse.Content.ReadFromJsonAsync<List<AlertDto>>();
         activeAlerts.Should().NotBeNull();
         activeAlerts!.Should().BeEmpty();
@@ -230,7 +230,7 @@ public class DryAirAlertIntegrationTests : IClassFixture<IntegrationTestFixture>
         }
 
         // Act
-        var response = await _client.GetAsync("/api/fields/field-dryair-5/alerts");
+        var response = await _client.GetAsync("/monitoring/fields/field-dryair-5/alerts");
         var alerts = await response.Content.ReadFromJsonAsync<List<AlertDto>>();
 
         // Assert - Não deve criar alerta (janela de 6h não foi atingida)
@@ -266,7 +266,7 @@ public class DryAirAlertIntegrationTests : IClassFixture<IntegrationTestFixture>
         }
 
         // Act
-        var response = await _client.GetAsync("/api/fields/field-dryair-6/alerts");
+        var response = await _client.GetAsync("/monitoring/fields/field-dryair-6/alerts");
         var alerts = await response.Content.ReadFromJsonAsync<List<AlertDto>>();
 
         // Assert - Não deve criar alerta de ar seco quando não há dados de umidade do ar

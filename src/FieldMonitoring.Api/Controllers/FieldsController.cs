@@ -10,7 +10,7 @@ namespace FieldMonitoring.Api.Controllers;
 /// Endpoints de API para operações a nível de talhão.
 /// </summary>
 [ApiController]
-[Route("api/[controller]")]
+[Route("monitoring/[controller]")]
 public class FieldsController : ControllerBase
 {
     private readonly GetFieldDetailQuery _fieldDetailQuery;
