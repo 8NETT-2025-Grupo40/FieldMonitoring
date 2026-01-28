@@ -60,7 +60,7 @@ env:
   ASPNETCORE_ENVIRONMENT: "Production"
   AWS__Region: "us-east-1"
   # InfluxDB (dentro do cluster - namespace influxdb)
-  InfluxDb__Url: "http://influxdb.influxdb.svc.cluster.local:8086"
+  InfluxDb__Url: "http://ec2-3-145-158-209.us-east-2.compute.amazonaws.com:8086"
   InfluxDb__Org: "agro-org"
   InfluxDb__Bucket: "sensores"
   InfluxDb__Measurement: "telemetry_readings"
