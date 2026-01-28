@@ -38,4 +38,20 @@ public class SimulationController : ControllerBase
         
         return Ok(result);
     }
+
+    /// <summary>
+    /// Insere uma leitura mockada no InfluxDB para testar conexao.
+    /// </summary>
+    [HttpGet("influx-test")]
+    public async Task<IActionResult> TestInfluxConnection(CancellationToken cancellationToken)
+    {
+        ProcessingResult result = await _useCase.InsertMockReadingAsync(cancellationToken);
+
+        if (!result.IsSuccess)
+        {
+            return BadRequest(result);
+        }
+
+        return Ok(result);
+    }
 }

@@ -101,6 +101,45 @@ public class ProcessTelemetryReadingUseCase
         }
     }
 
+    /// <summary>
+    /// Insere uma leitura mockada no InfluxDB para testar conexao.
+    /// Nao executa idempotencia, regras ou persistencia em SQL.
+    /// </summary>
+    public async Task<ProcessingResult> InsertMockReadingAsync(
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            string readingId = $"mock-{Guid.NewGuid():N}";
+            Result<SensorReading> readingResult = SensorReading.Create(
+                readingId: readingId,
+                sensorId: "sensor-mock-001",
+                fieldId: "field-mock-001",
+                farmId: "farm-mock-001",
+                timestamp: DateTimeOffset.UtcNow,
+                soilMoisturePercent: 42.5,
+                soilTemperatureC: 23.4,
+                rainMm: 0.2,
+                airTemperatureC: 26.1,
+                airHumidityPercent: 55.0,
+                source: ReadingSource.Http);
+
+            if (!readingResult.IsSuccess)
+            {
+                _logger.LogWarning("Failed to create mock reading: {Error}", readingResult.Error);
+                return ProcessingResult.Failed($"Mock reading invalid: {readingResult.Error}");
+            }
+
+            await _timeSeriesStore.AppendAsync(readingResult.Value!, cancellationToken);
+            return new ProcessingResult(ProcessingStatus.Success, $"Mock reading inserted: {readingId}");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to insert mock reading into InfluxDB.");
+            return ProcessingResult.Failed($"InfluxDB insert failed: {ex.Message}");
+        }
+    }
+
     private async Task PublishAlertEventsAsync(
         IReadOnlyList<AlertEvent> alertEvents,
         CancellationToken cancellationToken)
