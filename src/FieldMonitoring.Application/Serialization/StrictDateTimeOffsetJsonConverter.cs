@@ -17,7 +17,7 @@ public sealed class StrictDateTimeOffsetJsonConverter : JsonConverter<DateTimeOf
         // Esperamos uma string; caso contrário é inválido para nosso contrato.
         if (reader.TokenType != JsonTokenType.String)
         {
-            throw new JsonException("Timestamp must be a string with offset.");
+            throw new JsonException("O campo 'timestamp' deve ser uma string com offset.");
         }
 
         string? value = reader.GetString();
@@ -25,19 +25,19 @@ public sealed class StrictDateTimeOffsetJsonConverter : JsonConverter<DateTimeOf
         // contenha 'Z' ou um deslocamento ±HH:mm. Isso substitui o DateTimeOffsetParser removido.
         if (string.IsNullOrWhiteSpace(value))
         {
-            throw new JsonException("Timestamp must include offset (e.g. 2026-01-17T12:00:00-03:00).");
+            throw new JsonException("O campo 'timestamp' deve incluir offset (ex.: 2026-01-17T12:00:00-03:00).");
         }
 
         if (!DateTimeOffset.TryParse(value, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out DateTimeOffset parsed))
         {
-            throw new JsonException("Timestamp must be a valid ISO 8601 timestamp with offset.");
+            throw new JsonException("O campo 'timestamp' deve ser um timestamp ISO 8601 válido com offset.");
         }
 
         // Confirma presença de offset explícito: termina com 'Z' ou tem ±HH:mm
         var normalized = value.Trim();
         if (!normalized.EndsWith("Z", StringComparison.OrdinalIgnoreCase) && !System.Text.RegularExpressions.Regex.IsMatch(normalized, @"[+-]\d{2}:\d{2}$"))
         {
-            throw new JsonException("Timestamp must include offset (e.g. 2026-01-17T12:00:00-03:00).");
+            throw new JsonException("O campo 'timestamp' deve incluir offset (ex.: 2026-01-17T12:00:00-03:00).");
         }
 
         return parsed;

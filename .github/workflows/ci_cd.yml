@@ -24,9 +24,9 @@ on:
 
 env:
   AWS_REGION: us-east-1
-  AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID_TEMP }}
-  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID_TEMP }}
-  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY_TEMP }}
+  AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
   ECR_REPOSITORY: field-monitoring-api
   EKS_CLUSTER: agro-tech
   K8S_NAMESPACE: field-monitoring
@@ -296,6 +296,7 @@ jobs:
             echo "=========================================="
             echo "FieldMonitoring API URL: http://$ALB_URL/monitoring"
             echo "Swagger: http://$ALB_URL/monitoring/swagger"
-            echo "Health Check: http://$ALB_URL/monitoring/health"
+            echo "Liveness: http://$ALB_URL/monitoring/health"
+            echo "Readiness: http://$ALB_URL/monitoring/ready"
             echo "=========================================="
           fi

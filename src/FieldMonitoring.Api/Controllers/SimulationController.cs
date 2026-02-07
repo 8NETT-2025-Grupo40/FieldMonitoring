@@ -40,7 +40,7 @@ public class SimulationController : ControllerBase
     }
 
     /// <summary>
-    /// Insere uma leitura mockada no InfluxDB para testar conexao.
+    /// Insere uma leitura simulada no InfluxDB para testar conexão.
     /// </summary>
     [HttpGet("influx-test")]
     public async Task<IActionResult> TestInfluxConnection(CancellationToken cancellationToken)

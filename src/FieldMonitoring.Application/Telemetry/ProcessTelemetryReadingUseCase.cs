@@ -10,7 +10,7 @@ namespace FieldMonitoring.Application.Telemetry;
 
 /// <summary>
 /// Orquestra o processamento de uma leitura de telemetria.
-/// Este e o ponto de entrada principal do Worker quando uma mensagem chega da fila SQS.
+/// Este é o ponto de entrada principal do Worker quando uma mensagem chega da fila SQS.
 /// </summary>
 public class ProcessTelemetryReadingUseCase
 {
@@ -49,12 +49,12 @@ public class ProcessTelemetryReadingUseCase
             {
                 _logger.LogWarning("Invalid reading {ReadingId} from field {FieldId}: {Error}",
                     reading.ReadingId, reading.FieldId, errorMessage);
-                return ProcessingResult.Failed($"Invalid reading: {errorMessage}");
+                return ProcessingResult.Failed($"Leitura inválida: {errorMessage}");
             }
 
             if (await _idempotencyStore.ExistsAsync(reading.ReadingId, cancellationToken))
             {
-                return ProcessingResult.Skipped("Reading already processed");
+                return ProcessingResult.Skipped("Leitura já processada");
             }
 
             await _timeSeriesStore.AppendAsync(reading, cancellationToken);
@@ -97,13 +97,13 @@ public class ProcessTelemetryReadingUseCase
             _logger.LogError(ex, "Processing failed for reading {ReadingId} in field {FieldId}",
                 message.ReadingId, message.FieldId);
 
-            return ProcessingResult.Failed($"Processing error: {ex.Message}");
+            return ProcessingResult.Failed($"Erro no processamento: {ex.Message}");
         }
     }
 
     /// <summary>
-    /// Insere uma leitura mockada no InfluxDB para testar conexao.
-    /// Nao executa idempotencia, regras ou persistencia em SQL.
+    /// Insere uma leitura simulada no InfluxDB para testar conexão.
+    /// Não executa idempotência, regras ou persistência em SQL.
     /// </summary>
     public async Task<ProcessingResult> InsertMockReadingAsync(
         CancellationToken cancellationToken = default)
@@ -127,16 +127,16 @@ public class ProcessTelemetryReadingUseCase
             if (!readingResult.IsSuccess)
             {
                 _logger.LogWarning("Failed to create mock reading: {Error}", readingResult.Error);
-                return ProcessingResult.Failed($"Mock reading invalid: {readingResult.Error}");
+                return ProcessingResult.Failed($"Leitura simulada inválida: {readingResult.Error}");
             }
 
             await _timeSeriesStore.AppendAsync(readingResult.Value!, cancellationToken);
-            return new ProcessingResult(ProcessingStatus.Success, $"Mock reading inserted: {readingId}");
+            return new ProcessingResult(ProcessingStatus.Success, $"Leitura simulada inserida: {readingId}");
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to insert mock reading into InfluxDB.");
-            return ProcessingResult.Failed($"InfluxDB insert failed: {ex.Message}");
+            return ProcessingResult.Failed($"Falha ao inserir no InfluxDB: {ex.Message}");
         }
     }
 
