@@ -1,4 +1,4 @@
-# Deployment: gerencia os pods da aplicacao (Field Monitoring API)
+# Deployment: gerencia os pods da aplicação (Field Monitoring API)
 # CloudWatch Application Signals coleta traces automaticamente via DaemonSet
 apiVersion: apps/v1
 kind: Deployment
@@ -34,7 +34,7 @@ spec:
               containerPort: {{ .Values.containerPort }}
               protocol: TCP
           env:
-            # Variaveis nao sensiveis (hardcoded)
+            # Variáveis não sensíveis (hardcoded)
             - name: ASPNETCORE_URLS
               value: {{ .Values.env.ASPNETCORE_URLS | quote }}
             - name: ASPNETCORE_ENVIRONMENT
@@ -65,10 +65,14 @@ spec:
               value: {{ .Values.env.Sqs__VisibilityTimeout | quote }}
             - name: Sqs__Enabled
               value: {{ .Values.env.Sqs__Enabled | quote }}
+            - name: OTEL_SERVICE_NAME
+              value: {{ .Values.env.OTEL_SERVICE_NAME | quote }}
+            - name: OTEL_DOTNET_AUTO_TRACES_ADDITIONAL_SOURCES
+              value: {{ .Values.env.OTEL_DOTNET_AUTO_TRACES_ADDITIONAL_SOURCES | quote }}
             # OTEL para CloudWatch Agent DaemonSet (Application Signals)
             - name: OTEL_EXPORTER_OTLP_ENDPOINT
               value: {{ .Values.env.OTEL_EXPORTER_OTLP_ENDPOINT | quote }}
-            # Secrets sensiveis (External Secrets -> Kubernetes Secret)
+            # Secrets sensíveis (External Secrets -> Kubernetes Secret)
             - name: ConnectionStrings__SqlServer
               valueFrom:
                 secretKeyRef:

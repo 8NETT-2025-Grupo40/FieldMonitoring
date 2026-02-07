@@ -72,8 +72,16 @@ env:
   Sqs__WaitTimeSeconds: '20'
   Sqs__VisibilityTimeout: '30'
   Sqs__Enabled: 'true'
+  OTEL_SERVICE_NAME: field-monitoring-api
+  OTEL_DOTNET_AUTO_TRACES_ADDITIONAL_SOURCES: FieldMonitoring
   # OTEL envia traces para CloudWatch Agent DaemonSet (Application Signals)
   OTEL_EXPORTER_OTLP_ENDPOINT: http://cloudwatch-agent.amazon-cloudwatch.svc.cluster.local:4315
+
+# Anotações para auto-instrumentação .NET pelo add-on do CloudWatch Observability
+# Como a imagem da API usa Alpine, o runtime correto é linux-musl-x64
+podAnnotations:
+  instrumentation.opentelemetry.io/inject-dotnet: "true"
+  instrumentation.opentelemetry.io/otel-dotnet-auto-runtime: "linux-musl-x64"
 
 # Secrets sensiveis são gerenciados pelo External Secrets Operator
 # Sincroniza automaticamente do AWS Secrets Manager para Kubernetes Secrets

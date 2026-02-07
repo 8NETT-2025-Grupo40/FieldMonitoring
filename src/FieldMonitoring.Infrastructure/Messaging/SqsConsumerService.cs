@@ -1,6 +1,8 @@
+using System.Diagnostics;
 using System.Text.Json;
 using Amazon.SQS;
 using Amazon.SQS.Model;
+using FieldMonitoring.Application.Observability;
 using FieldMonitoring.Application.Serialization;
 using FieldMonitoring.Application.Telemetry;
 using Microsoft.Extensions.DependencyInjection;
@@ -106,16 +108,26 @@ public class SqsConsumerService : BackgroundService
 	/// </summary>
 	private async Task ProcessSingleMessageAsync(Message message, CancellationToken stoppingToken)
 	{
+		using Activity? activity = FieldMonitoringTelemetry.StartActivity(
+			FieldMonitoringTelemetry.SpanSqsConsumeTelemetryMessage,
+			ActivityKind.Consumer);
+
+		FieldMonitoringTelemetry.SetSqsContext(activity, _options.QueueUrl, message.MessageId);
+
 		try
 		{
 			TelemetryReceivedMessage? telemetryMessage = DeserializeMessage(message.Body);
 			if (telemetryMessage == null)
 			{
+				FieldMonitoringTelemetry.MarkFailure(activity, "invalid-message");
+
 				_logger.LogWarning("Falha ao deserializar mensagem: {MessageId}", message.MessageId);
 				// Deleta mensagem malformada para evitar reprocessamento infinito
 				await DeleteMessageAsync(message, stoppingToken);
 				return;
 			}
+
+			FieldMonitoringTelemetry.SetReadingContext(activity, telemetryMessage.FieldId, telemetryMessage.FarmId, telemetryMessage.Source);
 
 			using IServiceScope scope = _scopeFactory.CreateScope();
 			ProcessTelemetryReadingUseCase useCase = scope.ServiceProvider.GetRequiredService<ProcessTelemetryReadingUseCase>();
@@ -124,6 +136,8 @@ public class SqsConsumerService : BackgroundService
 
 			if (result.IsSuccess)
 			{
+				FieldMonitoringTelemetry.MarkSuccess(activity, skipped: result.WasSkipped);
+
 				_logger.LogDebug(
 					"Leitura {ReadingId} processada: {Message}",
 					telemetryMessage.ReadingId,
@@ -133,6 +147,8 @@ public class SqsConsumerService : BackgroundService
 			}
 			else
 			{
+				FieldMonitoringTelemetry.MarkFailure(activity, result.Message ?? "processing-failed");
+
 				_logger.LogWarning(
 					"Falha ao processar leitura {ReadingId}: {Reason}",
 					telemetryMessage.ReadingId,
@@ -143,6 +159,9 @@ public class SqsConsumerService : BackgroundService
 		}
 		catch (Exception ex)
 		{
+			FieldMonitoringTelemetry.MarkFailure(activity, ex.Message);
+			FieldMonitoringTelemetry.RecordException(activity, ex);
+
 			_logger.LogError(ex, "Erro processando mensagem {MessageId}", message.MessageId);
 			// Não deleta - deixa retry via visibility timeout
 		}

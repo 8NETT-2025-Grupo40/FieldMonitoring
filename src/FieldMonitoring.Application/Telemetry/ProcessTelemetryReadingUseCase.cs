@@ -1,5 +1,7 @@
+using System.Diagnostics;
 using FieldMonitoring.Application.Alerts;
 using FieldMonitoring.Application.Fields;
+using FieldMonitoring.Application.Observability;
 using FieldMonitoring.Domain.Alerts;
 using FieldMonitoring.Domain.Fields;
 using FieldMonitoring.Domain.Rules;
@@ -41,6 +43,12 @@ public class ProcessTelemetryReadingUseCase
         TelemetryReceivedMessage message,
         CancellationToken cancellationToken = default)
     {
+        using Activity? activity = FieldMonitoringTelemetry.StartActivity(
+            FieldMonitoringTelemetry.SpanProcessTelemetryReading,
+            ActivityKind.Internal);
+
+        FieldMonitoringTelemetry.SetReadingContext(activity, message.FieldId, message.FarmId, message.Source);
+
         try
         {
             SensorReading reading = message.ToSensorReading();
@@ -49,11 +57,14 @@ public class ProcessTelemetryReadingUseCase
             {
                 _logger.LogWarning("Invalid reading {ReadingId} from field {FieldId}: {Error}",
                     reading.ReadingId, reading.FieldId, errorMessage);
+
+                FieldMonitoringTelemetry.MarkFailure(activity, "invalid-reading");
                 return ProcessingResult.Failed($"Leitura inválida: {errorMessage}");
             }
 
             if (await _idempotencyStore.ExistsAsync(reading.ReadingId, cancellationToken))
             {
+                FieldMonitoringTelemetry.MarkSuccess(activity, skipped: true);
                 return ProcessingResult.Skipped("Leitura já processada");
             }
 
@@ -90,12 +101,18 @@ public class ProcessTelemetryReadingUseCase
             var alertEvents = AlertEventBuilder.BuildEvents(alertStatusBefore, field.Alerts);
             await PublishAlertEventsAsync(alertEvents, cancellationToken);
 
+            FieldMonitoringTelemetry.SetAlertEventsCount(activity, alertEvents.Count);
+            FieldMonitoringTelemetry.MarkSuccess(activity);
+
             return ProcessingResult.Success();
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Processing failed for reading {ReadingId} in field {FieldId}",
                 message.ReadingId, message.FieldId);
+
+            FieldMonitoringTelemetry.MarkFailure(activity, ex.Message);
+            FieldMonitoringTelemetry.RecordException(activity, ex);
 
             return ProcessingResult.Failed($"Erro no processamento: {ex.Message}");
         }
@@ -108,6 +125,10 @@ public class ProcessTelemetryReadingUseCase
     public async Task<ProcessingResult> InsertMockReadingAsync(
         CancellationToken cancellationToken = default)
     {
+        using Activity? activity = FieldMonitoringTelemetry.StartActivity(
+            FieldMonitoringTelemetry.SpanInsertMockTelemetryReading,
+            ActivityKind.Internal);
+
         try
         {
             string readingId = $"mock-{Guid.NewGuid():N}";
@@ -127,15 +148,19 @@ public class ProcessTelemetryReadingUseCase
             if (!readingResult.IsSuccess)
             {
                 _logger.LogWarning("Failed to create mock reading: {Error}", readingResult.Error);
+                FieldMonitoringTelemetry.MarkFailure(activity, "invalid-mock-reading");
                 return ProcessingResult.Failed($"Leitura simulada inválida: {readingResult.Error}");
             }
 
             await _timeSeriesStore.AppendAsync(readingResult.Value!, cancellationToken);
+            FieldMonitoringTelemetry.MarkSuccess(activity);
             return new ProcessingResult(ProcessingStatus.Success, $"Leitura simulada inserida: {readingId}");
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to insert mock reading into InfluxDB.");
+            FieldMonitoringTelemetry.MarkFailure(activity, ex.Message);
+            FieldMonitoringTelemetry.RecordException(activity, ex);
             return ProcessingResult.Failed($"Falha ao inserir no InfluxDB: {ex.Message}");
         }
     }
