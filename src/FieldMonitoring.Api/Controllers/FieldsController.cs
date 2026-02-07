@@ -33,7 +33,12 @@ public class FieldsController : ControllerBase
     /// <summary>
     /// Obtém informações detalhadas sobre um talhão.
     /// </summary>
+    /// <param name="fieldId">Identificador do talhão.</param>
+    /// <param name="cancellationToken">Token para cancelamento da operação.</param>
+    /// <returns>Dados detalhados do talhão ou 404 se não encontrado.</returns>
     [HttpGet("{fieldId}")]
+    [ProducesResponseType(typeof(FieldDetailDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<FieldDetailDto>> GetDetail(
         string fieldId,
         CancellationToken cancellationToken)
@@ -49,7 +54,11 @@ public class FieldsController : ControllerBase
     /// <summary>
     /// Obtém histórico de leituras de um talhão.
     /// </summary>
-    /// <returns>Lista de leituras.</returns>
+    /// <param name="fieldId">Identificador do talhão.</param>
+    /// <param name="from">Início do período em ISO 8601 com offset (opcional).</param>
+    /// <param name="to">Fim do período em ISO 8601 com offset (opcional).</param>
+    /// <param name="cancellationToken">Token para cancelamento da operação.</param>
+    /// <returns>Lista de leituras no período informado.</returns>
     [HttpGet("{fieldId}/history")]
     [ProducesResponseType(typeof(IReadOnlyList<ReadingDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IReadOnlyList<ReadingDto>>> GetHistory(
@@ -69,7 +78,11 @@ public class FieldsController : ControllerBase
     /// <summary>
     /// Obtém alertas ativos de um talhão.
     /// </summary>
+    /// <param name="fieldId">Identificador do talhão.</param>
+    /// <param name="cancellationToken">Token para cancelamento da operação.</param>
+    /// <returns>Lista de alertas ativos do talhão.</returns>
     [HttpGet("{fieldId}/alerts")]
+    [ProducesResponseType(typeof(IReadOnlyList<AlertDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IReadOnlyList<AlertDto>>> GetActiveAlerts(
         string fieldId,
         CancellationToken cancellationToken)
@@ -81,6 +94,11 @@ public class FieldsController : ControllerBase
     /// <summary>
     /// Obtém histórico de alertas de um talhão.
     /// </summary>
+    /// <param name="fieldId">Identificador do talhão.</param>
+    /// <param name="from">Início do período em ISO 8601 com offset (opcional).</param>
+    /// <param name="to">Fim do período em ISO 8601 com offset (opcional).</param>
+    /// <param name="cancellationToken">Token para cancelamento da operação.</param>
+    /// <returns>Lista de alertas no período informado.</returns>
     [HttpGet("{fieldId}/alerts/history")]
     [ProducesResponseType(typeof(IReadOnlyList<AlertDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IReadOnlyList<AlertDto>>> GetAlertHistory(

@@ -24,7 +24,12 @@ public class SimulationController : ControllerBase
     /// Simula a chegada de uma leitura de telemetria.
     /// Executa exatamente o mesmo caso de uso que o Worker.
     /// </summary>
+    /// <param name="message">Mensagem de telemetria simulada.</param>
+    /// <param name="cancellationToken">Token para cancelamento da operação.</param>
+    /// <returns>Resultado do processamento da leitura.</returns>
     [HttpPost("telemetry")]
+    [ProducesResponseType(typeof(ProcessingResult), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProcessingResult), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> SimulateTelemetry(
         [FromBody] TelemetryReceivedMessage message,
         CancellationToken cancellationToken)
@@ -42,7 +47,11 @@ public class SimulationController : ControllerBase
     /// <summary>
     /// Insere uma leitura simulada no InfluxDB para testar conexão.
     /// </summary>
+    /// <param name="cancellationToken">Token para cancelamento da operação.</param>
+    /// <returns>Resultado da inserção de leitura simulada.</returns>
     [HttpGet("influx-test")]
+    [ProducesResponseType(typeof(ProcessingResult), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProcessingResult), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> TestInfluxConnection(CancellationToken cancellationToken)
     {
         ProcessingResult result = await _useCase.InsertMockReadingAsync(cancellationToken);
