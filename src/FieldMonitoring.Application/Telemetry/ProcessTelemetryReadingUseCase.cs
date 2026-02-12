@@ -1,5 +1,7 @@
+using System.Diagnostics;
 using FieldMonitoring.Application.Alerts;
 using FieldMonitoring.Application.Fields;
+using FieldMonitoring.Application.Observability;
 using FieldMonitoring.Domain.Alerts;
 using FieldMonitoring.Domain.Fields;
 using FieldMonitoring.Domain.Rules;
@@ -10,7 +12,7 @@ namespace FieldMonitoring.Application.Telemetry;
 
 /// <summary>
 /// Orquestra o processamento de uma leitura de telemetria.
-/// Este e o ponto de entrada principal do Worker quando uma mensagem chega da fila SQS.
+/// Este é o ponto de entrada principal do Worker quando uma mensagem chega da fila SQS.
 /// </summary>
 public class ProcessTelemetryReadingUseCase
 {
@@ -41,6 +43,12 @@ public class ProcessTelemetryReadingUseCase
         TelemetryReceivedMessage message,
         CancellationToken cancellationToken = default)
     {
+        using Activity? activity = FieldMonitoringTelemetry.StartActivity(
+            FieldMonitoringTelemetry.SpanProcessTelemetryReading,
+            ActivityKind.Internal);
+
+        FieldMonitoringTelemetry.SetReadingContext(activity, message.FieldId, message.FarmId, message.Source);
+
         try
         {
             SensorReading reading = message.ToSensorReading();
@@ -49,12 +57,15 @@ public class ProcessTelemetryReadingUseCase
             {
                 _logger.LogWarning("Invalid reading {ReadingId} from field {FieldId}: {Error}",
                     reading.ReadingId, reading.FieldId, errorMessage);
-                return ProcessingResult.Failed($"Invalid reading: {errorMessage}");
+
+                FieldMonitoringTelemetry.MarkFailure(activity, "invalid-reading");
+                return ProcessingResult.Failed($"Leitura inválida: {errorMessage}");
             }
 
             if (await _idempotencyStore.ExistsAsync(reading.ReadingId, cancellationToken))
             {
-                return ProcessingResult.Skipped("Reading already processed");
+                FieldMonitoringTelemetry.MarkSuccess(activity, skipped: true);
+                return ProcessingResult.Skipped("Leitura já processada");
             }
 
             await _timeSeriesStore.AppendAsync(reading, cancellationToken);
@@ -90,6 +101,9 @@ public class ProcessTelemetryReadingUseCase
             var alertEvents = AlertEventBuilder.BuildEvents(alertStatusBefore, field.Alerts);
             await PublishAlertEventsAsync(alertEvents, cancellationToken);
 
+            FieldMonitoringTelemetry.SetAlertEventsCount(activity, alertEvents.Count);
+            FieldMonitoringTelemetry.MarkSuccess(activity);
+
             return ProcessingResult.Success();
         }
         catch (Exception ex)
@@ -97,7 +111,57 @@ public class ProcessTelemetryReadingUseCase
             _logger.LogError(ex, "Processing failed for reading {ReadingId} in field {FieldId}",
                 message.ReadingId, message.FieldId);
 
-            return ProcessingResult.Failed($"Processing error: {ex.Message}");
+            FieldMonitoringTelemetry.MarkFailure(activity, ex.Message);
+            FieldMonitoringTelemetry.RecordException(activity, ex);
+
+            return ProcessingResult.Failed($"Erro no processamento: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Insere uma leitura simulada no InfluxDB para testar conexão.
+    /// Não executa idempotência, regras ou persistência em SQL.
+    /// </summary>
+    public async Task<ProcessingResult> InsertMockReadingAsync(
+        CancellationToken cancellationToken = default)
+    {
+        using Activity? activity = FieldMonitoringTelemetry.StartActivity(
+            FieldMonitoringTelemetry.SpanInsertMockTelemetryReading,
+            ActivityKind.Internal);
+
+        try
+        {
+            string readingId = $"mock-{Guid.NewGuid():N}";
+            Result<SensorReading> readingResult = SensorReading.Create(
+                readingId: readingId,
+                sensorId: "sensor-mock-001",
+                fieldId: "field-mock-001",
+                farmId: "farm-mock-001",
+                timestamp: DateTimeOffset.UtcNow,
+                soilMoisturePercent: 42.5,
+                soilTemperatureC: 23.4,
+                rainMm: 0.2,
+                airTemperatureC: 26.1,
+                airHumidityPercent: 55.0,
+                source: ReadingSource.Http);
+
+            if (!readingResult.IsSuccess)
+            {
+                _logger.LogWarning("Failed to create mock reading: {Error}", readingResult.Error);
+                FieldMonitoringTelemetry.MarkFailure(activity, "invalid-mock-reading");
+                return ProcessingResult.Failed($"Leitura simulada inválida: {readingResult.Error}");
+            }
+
+            await _timeSeriesStore.AppendAsync(readingResult.Value!, cancellationToken);
+            FieldMonitoringTelemetry.MarkSuccess(activity);
+            return new ProcessingResult(ProcessingStatus.Success, $"Leitura simulada inserida: {readingId}");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to insert mock reading into InfluxDB.");
+            FieldMonitoringTelemetry.MarkFailure(activity, ex.Message);
+            FieldMonitoringTelemetry.RecordException(activity, ex);
+            return ProcessingResult.Failed($"Falha ao inserir no InfluxDB: {ex.Message}");
         }
     }
 

@@ -12,8 +12,8 @@ using NodaTime;
 namespace FieldMonitoring.Infrastructure.Persistence.TimeSeries;
 
 /// <summary>
-/// Adapter de series temporais usando InfluxDB.
-/// Influx organiza dados por measurement (serie), tags (filtros) e fields (valores).
+/// Adapter de séries temporais usando InfluxDB.
+/// O Influx organiza dados por measurement (série), tags (filtros) e fields (valores).
 /// </summary>
 public sealed class InfluxTimeSeriesAdapter : ITimeSeriesReadingsStore, IDisposable
 {

@@ -11,7 +11,10 @@ builder.Services.AddApplicationServices();
 // Adiciona serviços da camada Infrastructure (adapters, EF Core, etc)
 builder.Services.AddInfrastructureServices(builder.Configuration);
 
-// Adiciona consumer SQS (mensageria)
+// Adiciona verificações de saúde (liveness/readiness)
+builder.Services.AddApiHealthChecks(builder.Configuration);
+
+// Adiciona consumidor SQS (mensageria)
 builder.Services.AddSqsMessaging(builder.Configuration);
 
 // Adiciona autenticação e autorização com AWS Cognito
@@ -34,6 +37,7 @@ app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+app.MapApiHealthEndpoints();
 
 // Log de inicialização
 ILogger<Program> logger = app.Services.GetRequiredService<ILogger<Program>>();

@@ -31,7 +31,11 @@ public class FarmsController : ControllerBase
     /// Obtém a visão geral de todos os talhões de uma fazenda.
     /// Retorna status atual, últimas leituras e contagem de alertas.
     /// </summary>
+    /// <param name="farmId">Identificador da fazenda.</param>
+    /// <param name="cancellationToken">Token para cancelamento da operação.</param>
+    /// <returns>Visão geral da fazenda.</returns>
     [HttpGet("{farmId}/overview")]
+    [ProducesResponseType(typeof(FarmOverviewDto), StatusCodes.Status200OK)]
     public async Task<ActionResult<FarmOverviewDto>> GetOverview(
         string farmId,
         CancellationToken cancellationToken)
@@ -44,7 +48,11 @@ public class FarmsController : ControllerBase
     /// Obtém alertas ativos de uma fazenda.
     /// Retorna apenas alertas com status Active (não resolvidos).
     /// </summary>
+    /// <param name="farmId">Identificador da fazenda.</param>
+    /// <param name="cancellationToken">Token para cancelamento da operação.</param>
+    /// <returns>Lista de alertas ativos da fazenda.</returns>
     [HttpGet("{farmId}/alerts")]
+    [ProducesResponseType(typeof(IReadOnlyList<AlertDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IReadOnlyList<AlertDto>>> GetActiveAlerts(
         string farmId,
         CancellationToken cancellationToken)
@@ -57,6 +65,11 @@ public class FarmsController : ControllerBase
     /// Obtém histórico de alertas de uma fazenda.
     /// Inclui alertas ativos e resolvidos dentro do período especificado.
     /// </summary>
+    /// <param name="farmId">Identificador da fazenda.</param>
+    /// <param name="from">Início do período em ISO 8601 com offset (opcional).</param>
+    /// <param name="to">Fim do período em ISO 8601 com offset (opcional).</param>
+    /// <param name="cancellationToken">Token para cancelamento da operação.</param>
+    /// <returns>Lista de alertas no período informado.</returns>
     [HttpGet("{farmId}/alerts/history")]
     [ProducesResponseType(typeof(IReadOnlyList<AlertDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IReadOnlyList<AlertDto>>> GetAlertHistory(

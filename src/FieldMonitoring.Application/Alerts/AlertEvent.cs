@@ -4,7 +4,7 @@ namespace FieldMonitoring.Application.Alerts;
 
 /// <summary>
 /// Evento de alerta projetado para time-series (InfluxDB).
-/// Representa uma mudanca de status do alerta.
+/// Representa uma mudança de status do alerta.
 /// </summary>
 public sealed record AlertEvent
 {
