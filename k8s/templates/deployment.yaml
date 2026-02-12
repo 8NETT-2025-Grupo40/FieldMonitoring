@@ -88,7 +88,7 @@ spec:
                 secretKeyRef:
                   name: {{ include "field-monitoring-api.fullname" . }}-secrets
                   key: sqsQueueUrl
-            # Cognito config (extraido do JSON secret)
+            # Cognito config (extraído do JSON secret)
             - name: COGNITO_REGION
               valueFrom:
                 secretKeyRef:

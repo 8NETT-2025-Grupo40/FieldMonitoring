@@ -3,12 +3,12 @@ using System.Diagnostics;
 namespace FieldMonitoring.Application.Observability;
 
 /// <summary>
-/// Centraliza nomes de spans/tags e helpers de telemetria para manter consistencia.
+/// Centraliza nomes de spans/tags e helpers de telemetria para manter consistência.
 /// </summary>
 public static class FieldMonitoringTelemetry
 {
     /// <summary>
-    /// ActivitySource usada pelos spans manuais do dominio.
+    /// ActivitySource usada pelos spans manuais do domínio.
     /// </summary>
     public const string ActivitySourceName = "FieldMonitoring";
 
@@ -18,7 +18,7 @@ public static class FieldMonitoringTelemetry
     public const string SpanProcessTelemetryReading = "telemetry.process";
 
     /// <summary>
-    /// Nome do span para insercao de leitura simulada.
+    /// Nome do span para inserção de leitura simulada.
     /// </summary>
     public const string SpanInsertMockTelemetryReading = "telemetry.mock.insert";
 
@@ -33,7 +33,7 @@ public static class FieldMonitoringTelemetry
     public const string ProcessingStatusSuccess = "success";
 
     /// <summary>
-    /// Status de processamento ignorado por idempotencia.
+    /// Status de processamento ignorado por idempotência.
     /// </summary>
     public const string ProcessingStatusSkipped = "skipped";
 
@@ -42,7 +42,7 @@ public static class FieldMonitoringTelemetry
     /// </summary>
     public const string ProcessingStatusFailed = "failed";
 
-    // Atributos de negocio com namespace proprio para evitar colisao.
+    // Atributos de negócio com namespace próprio para evitar colisão.
     private const string AttributeFieldId = "fieldmonitoring.field.id";
     private const string AttributeFarmId = "fieldmonitoring.farm.id";
     private const string AttributeReadingSource = "fieldmonitoring.reading.source";
@@ -50,7 +50,7 @@ public static class FieldMonitoringTelemetry
     private const string AttributeProcessingSkipped = "fieldmonitoring.processing.skipped";
     private const string AttributeProcessingAlertEventsCount = "fieldmonitoring.processing.alert_events_count";
 
-    // Atributos semanticos de mensageria.
+    // Atributos semânticos de mensageria.
     private const string AttributeMessagingSystem = "messaging.system";
     private const string AttributeMessagingOperation = "messaging.operation";
     private const string AttributeMessagingDestinationName = "messaging.destination.name";
@@ -64,17 +64,17 @@ public static class FieldMonitoringTelemetry
     /// </summary>
     /// <param name="name">Nome do span.</param>
     /// <param name="kind">Tipo do span.</param>
-    /// <returns>Span criado ou null quando nao ha listener.</returns>
+    /// <returns>Span criado ou null quando não há listener.</returns>
     public static Activity? StartActivity(string name, ActivityKind kind = ActivityKind.Internal)
     {
         return ActivitySource.StartActivity(name, kind);
     }
 
     /// <summary>
-    /// Adiciona contexto basico da leitura com tags nao vazias.
+    /// Adiciona contexto básico da leitura com tags não vazias.
     /// </summary>
     /// <param name="activity">Span atual.</param>
-    /// <param name="fieldId">Identificador do talhao.</param>
+    /// <param name="fieldId">Identificador do talhão.</param>
     /// <param name="farmId">Identificador da fazenda.</param>
     /// <param name="source">Origem da leitura.</param>
     public static void SetReadingContext(Activity? activity, string? fieldId, string? farmId, string? source)
@@ -166,7 +166,7 @@ public static class FieldMonitoringTelemetry
     }
 
     /// <summary>
-    /// Marca processamento como falha com motivo para diagnostico.
+    /// Marca processamento como falha com motivo para diagnóstico.
     /// </summary>
     /// <param name="activity">Span atual.</param>
     /// <param name="reason">Motivo da falha.</param>
@@ -182,10 +182,10 @@ public static class FieldMonitoringTelemetry
     }
 
     /// <summary>
-    /// Registra excecao como evento para facilitar analise no trace.
+    /// Registra exceção como evento para facilitar análise no trace.
     /// </summary>
     /// <param name="activity">Span atual.</param>
-    /// <param name="exception">Excecao capturada.</param>
+    /// <param name="exception">Exceção capturada.</param>
     public static void RecordException(Activity? activity, Exception exception)
     {
         if (activity is null)

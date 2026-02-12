@@ -1,6 +1,6 @@
 {{- if .Values.autoscaling.enabled }}
-# HPA (Horizontal Pod Autoscaler): escalonamento automatico de pods
-# Aumenta/diminui replicas baseado em metricas de CPU e memoria
+# HPA (Horizontal Pod Autoscaler): escalonamento automático de pods
+# Aumenta/diminui réplicas baseado em métricas de CPU e memória
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:

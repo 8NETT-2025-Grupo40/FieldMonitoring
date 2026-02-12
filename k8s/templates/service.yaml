@@ -1,6 +1,6 @@
-# Service: expoe os pods internamente no cluster
-# ClusterIP = apenas acessivel dentro do cluster
-# O Ingress (ALB) roteia trafego externo para este Service
+# Service: expõe os pods internamente no cluster
+# ClusterIP = apenas acessível dentro do cluster
+# O Ingress (ALB) roteia tráfego externo para este Service
 apiVersion: v1
 kind: Service
 metadata:

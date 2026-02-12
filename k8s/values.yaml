@@ -1,19 +1,19 @@
-# Configuracao da imagem Docker no ECR (Elastic Container Registry)
+# Configuração da imagem Docker no ECR (Elastic Container Registry)
 # O workflow do GitHub Actions sobrescreve a tag com o SHA do commit
 image:
   repository: 431104159307.dkr.ecr.us-east-1.amazonaws.com/field-monitoring-api
   tag: latest
   pullPolicy: IfNotPresent
 
-# Numero de pods que serao criados inicialmente
+# Número de pods que serão criados inicialmente
 # O HPA (Horizontal Pod Autoscaler) pode aumentar/diminuir baseado em carga
 replicaCount: 1
 
 # Porta do container
 containerPort: 5066
 
-# Service expoe os pods internamente no cluster
-# ClusterIP = apenas acessivel dentro do cluster (nao exposto externamente)
+# Service expõe os pods internamente no cluster
+# ClusterIP = apenas acessível dentro do cluster (não exposto externamente)
 service:
   type: ClusterIP
   port: 80
@@ -27,25 +27,25 @@ ingress:
   className: alb # usa o AWS Load Balancer Controller
   host: '' # deixe vazio para aceitar qualquer hostname
   annotations:
-    # scheme: internet-facing = ALB publico (acessivel pela internet)
+    # scheme: internet-facing = ALB público (acessível pela internet)
     alb.ingress.kubernetes.io/scheme: internet-facing
     # target-type: ip = ALB roteia diretamente para IPs dos pods (mais eficiente)
     alb.ingress.kubernetes.io/target-type: ip
-    # group.name: permite multiplos Ingress compartilharem o mesmo ALB
-    # Todas as APIs agro-tech usarao o mesmo ALB
+    # group.name: permite múltiplos Ingress compartilharem o mesmo ALB
+    # Todas as APIs agro-tech usarão o mesmo ALB
     alb.ingress.kubernetes.io/group.name: agro-tech
-    # healthcheck-path: endpoint de readiness usado pelo ALB para rotear trafego
+    # healthcheck-path: endpoint de readiness usado pelo ALB para rotear tráfego
     alb.ingress.kubernetes.io/healthcheck-path: /monitoring/ready
     alb.ingress.kubernetes.io/listen-ports: '[{"HTTP":80}]'
 
-  # Path unico para FieldMonitoring - todas as rotas comecam com /monitoring
+  # Path único para FieldMonitoring - todas as rotas começam com /monitoring
   paths:
     - path: /monitoring
       pathType: Prefix
 
 # Recursos garantidos (requests) e limites (limits) para cada container
 # requests: Kubernetes garante esses recursos ao agendar o pod
-# limits: Valores maximos que o container pode usar (exceder memory = pod e morto)
+# limits: Valores máximos que o container pode usar (exceder memory = pod é morto)
 resources:
   requests:
     cpu: 150m # 0.15 CPU
@@ -54,7 +54,7 @@ resources:
     cpu: 750m # 0.75 CPU
     memory: 768Mi # 768 megabytes
 
-# Variaveis de ambiente nao sensiveis (valores publicos)
+# Variáveis de ambiente não sensíveis (valores públicos)
 env:
   ASPNETCORE_URLS: http://+:5066
   ASPNETCORE_ENVIRONMENT: Production
@@ -83,7 +83,7 @@ podAnnotations:
   instrumentation.opentelemetry.io/inject-dotnet: "true"
   instrumentation.opentelemetry.io/otel-dotnet-auto-runtime: "linux-musl-x64"
 
-# Secrets sensiveis são gerenciados pelo External Secrets Operator
+# Secrets sensíveis são gerenciados pelo External Secrets Operator
 # Sincroniza automaticamente do AWS Secrets Manager para Kubernetes Secrets
 secrets:
   # Connection string do SQL Server/RDS
@@ -95,21 +95,21 @@ secrets:
   # URL da fila SQS
   sqsQueueUrl:
     awsSecretName: field-monitoring-sqs-queue-url
-  # Configuracoes do Cognito (JSON: region, userPoolId, clientId)
+  # Configurações do Cognito (JSON: region, userPoolId, clientId)
   cognitoConfig:
     awsSecretName: field-monitoring-cognito-config
 
-# HPA (Horizontal Pod Autoscaler) - escalonamento automatico baseado em metricas
-# Aumenta/diminui numero de pods automaticamente baseado em carga
+# HPA (Horizontal Pod Autoscaler) - escalonamento automático baseado em métricas
+# Aumenta/diminui número de pods automaticamente baseado em carga
 autoscaling:
   enabled: true
   minReplicas: 1
   maxReplicas: 3
-  cpu: 60 # escala quando CPU media > 60%
-  memory: 70 # escala quando memoria media > 70%
+  cpu: 60 # escala quando CPU média > 60%
+  memory: 70 # escala quando memória média > 70%
 
 # ServiceAccount com IRSA (IAM Roles for Service Accounts)
-# Permite que pods assumam roles IAM sem credenciais estaticas
+# Permite que pods assumam roles IAM sem credenciais estáticas
 serviceAccount:
   create: false # false porque o eksctl cria durante o deploy (workflow)
   name: field-monitoring-api-sa # deve corresponder ao nome usado no workflow
@@ -118,7 +118,7 @@ serviceAccount:
 # Tempo de espera para graceful shutdown
 terminationGracePeriodSeconds: 30
 
-# Probes de saude
+# Probes de saúde
 livenessProbe:
   httpGet:
     path: /monitoring/health
