@@ -20,7 +20,10 @@
 				"sqs:DeleteMessage",
 				"sqs:GetQueueAttributes"
 			],
-			"Resource": "arn:aws:sqs:us-east-1:431104159307:field-monitoring-*"
+			"Resource": [
+				"arn:aws:sqs:us-east-1:431104159307:field-monitoring-*",
+				"arn:aws:sqs:us-east-1:431104159307:FieldMonitoring.fifo"
+			]
 		}
 	]
 }

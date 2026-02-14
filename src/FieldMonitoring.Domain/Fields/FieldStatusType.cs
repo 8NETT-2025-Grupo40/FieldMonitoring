@@ -16,11 +16,6 @@ public enum FieldStatusType
     DryAlert = 1,
 
     /// <summary>
-    /// Condições ambientais indicam risco de infestação de pragas.
-    /// </summary>
-    PestRisk = 2,
-
-    /// <summary>
     /// Nenhum dado de telemetria recebido dentro da janela de tempo esperada.
     /// </summary>
     NoRecentData = 3,

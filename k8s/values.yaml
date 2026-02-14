@@ -59,7 +59,7 @@ env:
   ASPNETCORE_URLS: http://+:5066
   ASPNETCORE_ENVIRONMENT: Production
   AWS__Region: us-east-1
-  # InfluxDB (dentro do cluster - namespace influxdb)
+  # InfluxDB (endpoint público temporário para o MVP acadêmico)
   InfluxDb__Url: http://ec2-98-84-125-13.compute-1.amazonaws.com:8086
   InfluxDb__Org: agro-org
   InfluxDb__Bucket: sensores

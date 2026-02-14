@@ -19,7 +19,6 @@ public static class AlertTypeExtensions
         AlertType.Dryness => 3,      // Crítico - falta de água
         AlertType.DryAir => 4,       // Moderado - estresse hídrico
         AlertType.HumidAir => 5,     // Moderado - risco de doenças fúngicas
-        AlertType.PestRisk => 6,     // Monitoramento - risco de pragas
         _ => 99
     };
 
@@ -33,7 +32,6 @@ public static class AlertTypeExtensions
         AlertType.Dryness => FieldStatusType.DryAlert,
         AlertType.DryAir => FieldStatusType.DryAirAlert,
         AlertType.HumidAir => FieldStatusType.HumidAirAlert,
-        AlertType.PestRisk => FieldStatusType.PestRisk,
         _ => FieldStatusType.Normal
     };
 
@@ -47,7 +45,6 @@ public static class AlertTypeExtensions
         AlertType.Dryness => "Alerta de seca ativo",
         AlertType.DryAir => "Alerta de ar seco ativo",
         AlertType.HumidAir => "Alerta de ar úmido ativo",
-        AlertType.PestRisk => "Alerta de risco de pragas ativo",
         _ => "Alerta ativo"
     };
 }

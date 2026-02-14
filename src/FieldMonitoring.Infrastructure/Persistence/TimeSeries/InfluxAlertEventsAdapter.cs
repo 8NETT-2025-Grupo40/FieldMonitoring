@@ -8,7 +8,7 @@ namespace FieldMonitoring.Infrastructure.Persistence.TimeSeries;
 /// <summary>
 /// Adapter para gravar eventos de alertas no InfluxDB.
 /// </summary>
-public sealed class InfluxAlertEventsAdapter : IAlertEventsStore, IDisposable
+public sealed class InfluxAlertEventsAdapter : IAlertEventsStore
 {
     private const string TagFieldId = "fieldId";
     private const string TagFarmId = "farmId";
@@ -20,18 +20,17 @@ public sealed class InfluxAlertEventsAdapter : IAlertEventsStore, IDisposable
     private const string FieldSeverity = "severity";
 
     private readonly InfluxDbOptions _options;
-    private readonly InfluxDBClient _client;
+    private readonly IInfluxDBClient _client;
 
-    public InfluxAlertEventsAdapter(InfluxDbOptions options)
+    public InfluxAlertEventsAdapter(InfluxDbOptions options, IInfluxDBClient client)
     {
         _options = options ?? throw new ArgumentNullException(nameof(options));
+        _client = client ?? throw new ArgumentNullException(nameof(client));
 
         if (!_options.IsConfigured())
         {
-            throw new InvalidOperationException("InfluxDb enabled but missing configuration.");
+            throw new InvalidOperationException("InfluxDB habilitado, mas com configuração incompleta.");
         }
-
-        _client = new InfluxDBClient(_options.Url!, _options.Token!);
     }
 
     public async Task AppendAsync(AlertEvent alertEvent, CancellationToken cancellationToken = default)
@@ -39,11 +38,6 @@ public sealed class InfluxAlertEventsAdapter : IAlertEventsStore, IDisposable
         PointData point = BuildPoint(alertEvent);
         var writeApi = _client.GetWriteApiAsync();
         await writeApi.WritePointAsync(point, _options.Bucket!, _options.Org!, cancellationToken);
-    }
-
-    public void Dispose()
-    {
-        _client.Dispose();
     }
 
     private PointData BuildPoint(AlertEvent alertEvent)

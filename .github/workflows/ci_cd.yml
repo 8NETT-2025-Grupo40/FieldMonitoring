@@ -59,7 +59,7 @@ jobs:
             ./
 
   tests:
-    name: Run unit tests
+    name: Run tests
     needs: build
     runs-on: ubuntu-latest
 

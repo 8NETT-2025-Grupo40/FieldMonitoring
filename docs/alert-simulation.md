@@ -2,12 +2,12 @@
 
 ## Base
 
-- Swagger local: https://localhost:5001/index.html
-- Endpoint de simulação: POST /api/simulation/telemetry
+- Swagger local: http://localhost:5066/monitoring/swagger
+- Endpoint de simulação: POST /monitoring/simulation/telemetry
 - Validações:
-  - GET /api/fields/{fieldId}
-  - GET /api/fields/{fieldId}/alerts
-  - GET /api/fields/{fieldId}/alerts/history
+  - GET /monitoring/fields/{fieldId}
+  - GET /monitoring/fields/{fieldId}/alerts
+  - GET /monitoring/fields/{fieldId}/alerts/history
 
 ## Observações
 
