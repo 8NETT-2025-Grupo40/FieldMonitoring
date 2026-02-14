@@ -11,11 +11,6 @@ public enum AlertType
     Dryness = 1,
 
     /// <summary>
-    /// Alerta gerado quando condições ambientais favorecem desenvolvimento de pragas.
-    /// </summary>
-    PestRisk = 2,
-
-    /// <summary>
     /// Alerta gerado quando a temperatura do ar está acima do limite por período prolongado.
     /// </summary>
     ExtremeHeat = 3,

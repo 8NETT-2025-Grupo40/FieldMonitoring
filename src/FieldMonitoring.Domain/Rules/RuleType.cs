@@ -11,11 +11,6 @@ public enum RuleType
     Dryness = 1,
 
     /// <summary>
-    /// Rule for detecting pest risk based on environmental conditions.
-    /// </summary>
-    PestRisk = 2,
-
-    /// <summary>
     /// Rule for detecting extreme heat based on air temperature.
     /// </summary>
     ExtremeHeat = 3,

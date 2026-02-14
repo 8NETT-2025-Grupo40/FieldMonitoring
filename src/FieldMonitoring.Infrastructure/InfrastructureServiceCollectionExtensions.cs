@@ -7,6 +7,7 @@ using FieldMonitoring.Infrastructure.Persistence;
 using FieldMonitoring.Infrastructure.Persistence.SqlServer;
 using FieldMonitoring.Infrastructure.Persistence.TimeSeries;
 using FieldMonitoring.Infrastructure.Repositories;
+using InfluxDB.Client;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -54,9 +55,11 @@ public static class InfrastructureServiceCollectionExtensions
         {
             if (!influxOptions.IsConfigured())
             {
-                throw new InvalidOperationException("InfluxDb enabled but missing configuration.");
+                throw new InvalidOperationException("InfluxDB habilitado, mas com configuração incompleta.");
             }
 
+            services.AddSingleton<IInfluxDBClient>(_ => new InfluxDBClient(influxOptions.Url!, influxOptions.Token!));
+            services.AddSingleton<IInfluxBucketProbe, InfluxBucketProbe>();
             services.AddSingleton<ITimeSeriesReadingsStore, InfluxTimeSeriesAdapter>();
             services.AddSingleton<IAlertEventsStore, InfluxAlertEventsAdapter>();
         }

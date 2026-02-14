@@ -11,12 +11,12 @@
 
 ## Simular alertas via Swagger
 
-- Swagger local: https://localhost:5001/index.html
-- Endpoint de simulação: POST /api/simulation/telemetry
+- Swagger local: http://localhost:5066/monitoring/swagger
+- Endpoint de simulação: POST /monitoring/simulation/telemetry
 - Validações:
-  - GET /api/fields/{fieldId}
-  - GET /api/fields/{fieldId}/alerts
-  - GET /api/fields/{fieldId}/alerts/history
+  - GET /monitoring/fields/{fieldId}
+  - GET /monitoring/fields/{fieldId}/alerts
+  - GET /monitoring/fields/{fieldId}/alerts/history
 - Payloads detalhados: [docs/alert-simulation.md](docs/alert-simulation.md)
 
 ### Modelo do corpo da requisição
@@ -43,7 +43,7 @@ Observação: o `timestamp` deve incluir offset (ex.: `2026-01-17T12:00:00-03:00
 
 1. Envie uma leitura com timestamp no passado (agora - janela - 1h) e valor em condição de alerta.
 2. Envie uma segunda leitura com timestamp atual, mantendo a condição de alerta.
-3. Consulte GET /api/fields/{fieldId}/alerts.
+3. Consulte GET /monitoring/fields/{fieldId}/alerts.
 
 ### Como resolver um alerta
 
@@ -64,4 +64,3 @@ Recomendação: envie as leituras em ordem cronológica para evitar efeitos de r
 ## Alertas no InfluxDB (MVP)
 
 - Eventos de alerta são projetados na measurement `field_alerts` (abertura e resolução), incluindo campo numérico `active`.
-- Especificação detalhada: [docs/influx-alerts-spec.md](docs/influx-alerts-spec.md)

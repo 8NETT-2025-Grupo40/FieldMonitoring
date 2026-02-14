@@ -23,7 +23,7 @@ public class Alert
     public required string FieldId { get; set; }
 
     /// <summary>
-    /// Tipo do alerta (Dryness, PestRisk, etc.).
+    /// Tipo do alerta (Dryness, ExtremeHeat, etc.).
     /// Determina qual regra de negócio gerou o alerta.
     /// </summary>
     public AlertType AlertType { get; set; }
@@ -93,9 +93,6 @@ public class Alert
     // Factory methods legados mantidos para compatibilidade
     public static Alert CreateDrynessAlert(string farmId, string fieldId, string reason)
         => Create(AlertType.Dryness, farmId, fieldId, reason);
-
-    public static Alert CreatePestRiskAlert(string farmId, string fieldId, string reason)
-        => Create(AlertType.PestRisk, farmId, fieldId, reason);
 
     public static Alert CreateExtremeHeatAlert(string farmId, string fieldId, string reason)
         => Create(AlertType.ExtremeHeat, farmId, fieldId, reason);

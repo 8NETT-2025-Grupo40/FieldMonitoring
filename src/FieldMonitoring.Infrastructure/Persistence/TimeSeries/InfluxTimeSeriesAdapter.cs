@@ -15,7 +15,7 @@ namespace FieldMonitoring.Infrastructure.Persistence.TimeSeries;
 /// Adapter de séries temporais usando InfluxDB.
 /// O Influx organiza dados por measurement (série), tags (filtros) e fields (valores).
 /// </summary>
-public sealed class InfluxTimeSeriesAdapter : ITimeSeriesReadingsStore, IDisposable
+public sealed class InfluxTimeSeriesAdapter : ITimeSeriesReadingsStore
 {
     private const string TagFieldId = "fieldId";
     private const string TagFarmId = "farmId";
@@ -31,20 +31,23 @@ public sealed class InfluxTimeSeriesAdapter : ITimeSeriesReadingsStore, IDisposa
     private const string SourceMqtt = "mqtt";
 
     private readonly InfluxDbOptions _options;
-    private readonly InfluxDBClient _client;
+    private readonly IInfluxDBClient _client;
     private readonly ILogger<InfluxTimeSeriesAdapter> _logger;
 
-    public InfluxTimeSeriesAdapter(InfluxDbOptions options, ILogger<InfluxTimeSeriesAdapter> logger)
+    public InfluxTimeSeriesAdapter(
+        InfluxDbOptions options,
+        IInfluxDBClient client,
+        ILogger<InfluxTimeSeriesAdapter> logger)
     {
         _options = options ?? throw new ArgumentNullException(nameof(options));
-        _logger = logger;
+        _client = client ?? throw new ArgumentNullException(nameof(client));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
         if (!_options.IsConfigured())
         {
-            throw new InvalidOperationException("InfluxDb enabled but missing configuration.");
+            throw new InvalidOperationException("InfluxDB habilitado, mas com configuração incompleta.");
         }
 
-        _client = new InfluxDBClient(_options.Url!, _options.Token!);
     }
 
     public async Task AppendAsync(SensorReading reading, CancellationToken cancellationToken = default)
@@ -79,11 +82,6 @@ public sealed class InfluxTimeSeriesAdapter : ITimeSeriesReadingsStore, IDisposa
         return readings
             .OrderBy(r => r.Timestamp)
             .ToList();
-    }
-
-    public void Dispose()
-    {
-        _client.Dispose();
     }
 
     private PointData BuildPoint(SensorReading reading)
@@ -194,7 +192,7 @@ public sealed class InfluxTimeSeriesAdapter : ITimeSeriesReadingsStore, IDisposa
 
         if (!result.IsSuccess)
         {
-            _logger.LogWarning("Ignoring invalid reading from InfluxDb: {Error}", result.Error);
+            _logger.LogWarning("Ignorando leitura inválida do InfluxDB: {Error}", result.Error);
             reading = null!;
             return false;
         }

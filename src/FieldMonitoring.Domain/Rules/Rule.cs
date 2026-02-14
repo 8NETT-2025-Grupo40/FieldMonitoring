@@ -12,7 +12,7 @@ public class Rule
     public Guid RuleId { get; set; } = Guid.NewGuid();
 
     /// <summary>
-    /// Tipo da regra (Dryness, PestRisk, ExtremeHeat, Frost, DryAir, HumidAir).
+    /// Tipo da regra (Dryness, ExtremeHeat, Frost, DryAir, HumidAir).
     /// Determina qual avaliador usará esta regra.
     /// </summary>
     public RuleType RuleType { get; set; }
@@ -122,7 +122,6 @@ public class Rule
         return RuleType switch
         {
             RuleType.Dryness => $"Umidade do solo < {Threshold}% por {WindowHours} horas",
-            RuleType.PestRisk => $"Condições de risco de praga por {WindowHours} horas",
             RuleType.ExtremeHeat => $"Temperatura do ar > {Threshold}°C por {WindowHours} horas",
             RuleType.Frost => $"Temperatura do ar < {Threshold}°C por {WindowHours} horas",
             RuleType.DryAir => $"Umidade do ar < {Threshold}% por {WindowHours} horas",

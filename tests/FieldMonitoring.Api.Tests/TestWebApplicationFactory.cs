@@ -19,6 +19,8 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
 
         builder.ConfigureAppConfiguration((_, config) =>
         {
+            // Mantemos as fontes padrão do host de teste e sobrescrevemos
+            // apenas as chaves necessárias para os cenários de integração.
             Dictionary<string, string?> settings = new Dictionary<string, string?>
             {
                 ["ConnectionStrings:SqlServer"] = string.Empty,
@@ -30,7 +32,9 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
                 ["INFLUXDB_URL"] = string.Empty,
                 ["INFLUXDB_TOKEN"] = string.Empty,
                 ["INFLUXDB_ORG"] = string.Empty,
-                ["INFLUXDB_BUCKET"] = string.Empty
+                ["INFLUXDB_BUCKET"] = string.Empty,
+                ["Sqs:Enabled"] = "false",
+                ["Sqs:QueueUrl"] = string.Empty
             };
 
             config.AddInMemoryCollection(settings);
