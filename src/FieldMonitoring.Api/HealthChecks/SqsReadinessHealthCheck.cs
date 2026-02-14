@@ -47,7 +47,7 @@ internal sealed class SqsReadinessHealthCheck : IHealthCheck
         var request = new GetQueueAttributesRequest
         {
             QueueUrl = options.QueueUrl,
-            AttributeNames = [QueueAttributeName.QueueArn]
+            AttributeNames = new List<string> { "QueueArn" }
         };
 
         try

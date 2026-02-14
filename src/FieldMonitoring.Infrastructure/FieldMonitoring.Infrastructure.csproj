@@ -15,7 +15,8 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
 
-    <PackageReference Include="AWSSDK.SQS" Version="4.0.2.12" />
+    <PackageReference Include="AWSSDK.SQS" Version="3.7.502.38" />
+    <PackageReference Include="AWSSDK.SecurityToken" Version="3.7.501.16" />
     <PackageReference Include="InfluxDB.Client" Version="5.0.0" />
 
 
