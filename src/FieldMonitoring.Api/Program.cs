@@ -9,7 +9,7 @@ WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 builder.Services.AddApplicationServices();
 
 // Adiciona serviços da camada Infrastructure (adapters, EF Core, etc)
-builder.Services.AddInfrastructureServices(builder.Configuration);
+builder.Services.AddInfrastructureServices(builder.Configuration, builder.Environment);
 
 // Adiciona verificações de saúde (liveness/readiness)
 builder.Services.AddApiHealthChecks(builder.Configuration);

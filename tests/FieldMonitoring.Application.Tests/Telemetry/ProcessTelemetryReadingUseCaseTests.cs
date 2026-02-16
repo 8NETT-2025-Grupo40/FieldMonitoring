@@ -46,6 +46,7 @@ public class ProcessTelemetryReadingUseCaseTests
         // Assert
         result.IsSuccess.Should().BeTrue();
         result.WasSkipped.Should().BeTrue();
+        result.ShouldRetry.Should().BeFalse();
         await _timeSeriesStore.DidNotReceive().AppendAsync(Arg.Any<SensorReading>(), Arg.Any<CancellationToken>());
     }
 
@@ -65,13 +66,14 @@ public class ProcessTelemetryReadingUseCaseTests
         // Assert
         result.IsSuccess.Should().BeTrue();
         result.WasSkipped.Should().BeFalse();
+        result.ShouldRetry.Should().BeFalse();
         await _timeSeriesStore.Received(1).AppendAsync(Arg.Any<SensorReading>(), Arg.Any<CancellationToken>());
         await _fieldRepository.Received(1).SaveAsync(Arg.Any<Field>(), Arg.Any<CancellationToken>());
         await _idempotencyStore.Received(1).MarkProcessedAsync(Arg.Any<ProcessedReading>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
-    public async Task ExecuteAsync_WhenInvalidReading_ShouldLogError()
+    public async Task ExecuteAsync_WhenInvalidReading_ShouldReturnNonRetryableFailure()
     {
         // Arrange
         TelemetryReceivedMessage message = new TelemetryReceivedMessage
@@ -91,12 +93,26 @@ public class ProcessTelemetryReadingUseCaseTests
 
         // Assert
         result.IsSuccess.Should().BeFalse();
-        _logger.Received(1).Log(
-            LogLevel.Error,
-            Arg.Any<EventId>(),
-            Arg.Any<object>(),
-            Arg.Any<Exception>(),
-            Arg.Any<Func<object, Exception?, string>>());
+        result.ShouldRetry.Should().BeFalse();
+        await _timeSeriesStore.DidNotReceive().AppendAsync(Arg.Any<SensorReading>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_WhenUnexpectedError_ShouldReturnRetryableFailure()
+    {
+        // Arrange
+        TelemetryReceivedMessage message = CreateValidMessage();
+        _idempotencyStore.ExistsAsync(message.ReadingId, Arg.Any<CancellationToken>())
+            .Returns(false);
+        _timeSeriesStore.AppendAsync(Arg.Any<SensorReading>(), Arg.Any<CancellationToken>())
+            .Returns(_ => throw new InvalidOperationException("falha transitória"));
+
+        // Act
+        ProcessingResult result = await _useCase.ExecuteAsync(message);
+
+        // Assert
+        result.IsSuccess.Should().BeFalse();
+        result.ShouldRetry.Should().BeTrue();
     }
 
     private static TelemetryReceivedMessage CreateValidMessage()

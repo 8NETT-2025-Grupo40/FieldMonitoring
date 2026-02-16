@@ -8,7 +8,7 @@ namespace FieldMonitoring.Api.HealthChecks;
 
 internal sealed class SqsReadinessHealthCheck : IHealthCheck
 {
-    private static readonly TimeSpan ProbeTimeout = TimeSpan.FromSeconds(2);
+    private static readonly TimeSpan ProbeTimeout = TimeSpan.FromSeconds(20);
     private readonly IAmazonSQS _sqsClient;
     private readonly IOptions<SqsOptions> _options;
 

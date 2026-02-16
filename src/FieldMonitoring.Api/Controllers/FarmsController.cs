@@ -1,4 +1,4 @@
-// ModelBinding removed: using native DateTimeOffset binder for query params
+using FieldMonitoring.Api.Utilities;
 using FieldMonitoring.Application.Alerts;
 using FieldMonitoring.Application.Fields;
 using Microsoft.AspNetCore.Mvc;
@@ -72,14 +72,22 @@ public class FarmsController : ControllerBase
     /// <returns>Lista de alertas no período informado.</returns>
     [HttpGet("{farmId}/alerts/history")]
     [ProducesResponseType(typeof(IReadOnlyList<AlertDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<IReadOnlyList<AlertDto>>> GetAlertHistory(
         string farmId,
         [FromQuery] string? from,
         [FromQuery] string? to,
         CancellationToken cancellationToken)
     {
-        var parsedTo = FieldMonitoring.Api.Utilities.QueryDateTimeOffsetParser.Parse(to);
-        var parsedFrom = FieldMonitoring.Api.Utilities.QueryDateTimeOffsetParser.Parse(from);
+        if (!QueryDateTimeOffsetParser.TryParseRange(
+                from,
+                to,
+                out DateTimeOffset? parsedFrom,
+                out DateTimeOffset? parsedTo,
+                out string? validationMessage))
+        {
+            return BadRequest(validationMessage);
+        }
 
         IReadOnlyList<AlertDto> result = await _alertHistoryQuery.ExecuteByFarmAsync(farmId, parsedFrom, parsedTo, cancellationToken);
         return Ok(result);

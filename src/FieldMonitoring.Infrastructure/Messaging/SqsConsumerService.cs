@@ -47,17 +47,17 @@ public class SqsConsumerService : BackgroundService
 	{
 		if (!_options.Enabled)
 		{
-			_logger.LogInformation("SQS Consumer desabilitado");
+			_logger.LogInformation("Consumidor SQS desabilitado.");
 			return;
 		}
 
 		if (string.IsNullOrEmpty(_options.QueueUrl))
 		{
-			_logger.LogWarning("URL da fila SQS não configurada. Consumer não será iniciado.");
+			_logger.LogWarning("URL da fila SQS não configurada. O consumidor não será iniciado.");
 			return;
 		}
 
-		_logger.LogInformation("SQS Consumer iniciando. Fila: {QueueUrl}", _options.QueueUrl);
+		_logger.LogInformation("Consumidor SQS iniciando. Fila: {QueueUrl}", _options.QueueUrl);
 
 		while (!stoppingToken.IsCancellationRequested)
 		{
@@ -67,7 +67,7 @@ public class SqsConsumerService : BackgroundService
 			}
 			catch (Exception ex)
 			{
-				_logger.LogError(ex, "Erro processando mensagens SQS. Tentando novamente em 5 segundos...");
+				_logger.LogError(ex, "Erro ao processar mensagens SQS. Nova tentativa em 5 segundos...");
 				await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);
 			}
 		}
@@ -104,7 +104,8 @@ public class SqsConsumerService : BackgroundService
 	/// <summary>
 	/// Processa uma única mensagem de telemetria.
 	/// Em caso de sucesso, deleta a mensagem da fila.
-	/// Em caso de falha, deixa a mensagem para retry via visibility timeout.
+	/// Em caso de falha não recuperável, deleta a mensagem para evitar loop infinito.
+	/// Em caso de falha recuperável, mantém a mensagem para nova tentativa.
 	/// </summary>
 	private async Task ProcessSingleMessageAsync(Message message, CancellationToken stoppingToken)
 	{
@@ -121,7 +122,7 @@ public class SqsConsumerService : BackgroundService
 			{
 				FieldMonitoringTelemetry.MarkFailure(activity, "invalid-message");
 
-				_logger.LogWarning("Falha ao deserializar mensagem: {MessageId}", message.MessageId);
+				_logger.LogWarning("Falha ao desserializar mensagem: {MessageId}", message.MessageId);
 				// Deleta mensagem malformada para evitar reprocessamento infinito
 				await DeleteMessageAsync(message, stoppingToken);
 				return;
@@ -141,7 +142,7 @@ public class SqsConsumerService : BackgroundService
 				_logger.LogDebug(
 					"Leitura {ReadingId} processada: {Message}",
 					telemetryMessage.ReadingId,
-					result.WasSkipped ? "Pulada (duplicada)" : "Sucesso");
+					result.WasSkipped ? "Ignorada (duplicada)" : "Sucesso");
 
 				await DeleteMessageAsync(message, stoppingToken);
 			}
@@ -149,12 +150,23 @@ public class SqsConsumerService : BackgroundService
 			{
 				FieldMonitoringTelemetry.MarkFailure(activity, result.Message ?? "processing-failed");
 
+				if (!result.ShouldRetry)
+				{
+					_logger.LogWarning(
+						"Falha não recuperável ao processar leitura {ReadingId}: {Reason}. A mensagem será removida da fila.",
+						telemetryMessage.ReadingId,
+						result.Message);
+
+					await DeleteMessageAsync(message, stoppingToken);
+					return;
+				}
+
 				_logger.LogWarning(
-					"Falha ao processar leitura {ReadingId}: {Reason}",
+					"Falha ao processar leitura {ReadingId}: {Reason}. A mensagem permanecerá na fila para nova tentativa.",
 					telemetryMessage.ReadingId,
 					result.Message);
 
-				// Não deleta - deixa retry via visibility timeout
+				// Não deleta - mantém a mensagem para nova tentativa via visibility timeout.
 			}
 		}
 		catch (Exception ex)
@@ -162,8 +174,8 @@ public class SqsConsumerService : BackgroundService
 			FieldMonitoringTelemetry.MarkFailure(activity, ex.Message);
 			FieldMonitoringTelemetry.RecordException(activity, ex);
 
-			_logger.LogError(ex, "Erro processando mensagem {MessageId}", message.MessageId);
-			// Não deleta - deixa retry via visibility timeout
+			_logger.LogError(ex, "Erro ao processar mensagem {MessageId}", message.MessageId);
+			// Não deleta - mantém a mensagem para nova tentativa via visibility timeout.
 		}
 	}
 
@@ -189,7 +201,7 @@ public class SqsConsumerService : BackgroundService
 		}
 		catch (JsonException ex)
 		{
-			_logger.LogError(ex, "Falha ao deserializar corpo da mensagem");
+			_logger.LogError(ex, "Falha ao desserializar o corpo da mensagem.");
 			return null;
 		}
 	}

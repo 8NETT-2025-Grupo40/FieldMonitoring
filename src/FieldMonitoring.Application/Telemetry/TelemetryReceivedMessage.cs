@@ -91,7 +91,7 @@ public sealed record TelemetryReceivedMessage
 
         if (!result.IsSuccess)
         {
-            throw new InvalidOperationException($"Falha ao criar SensorReading: {result.Error}");
+            throw new InvalidOperationException($"Falha ao criar leitura de sensor: {result.Error}");
         }
 
         return result.Value!;

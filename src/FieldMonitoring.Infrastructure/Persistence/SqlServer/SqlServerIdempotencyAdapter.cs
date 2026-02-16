@@ -1,5 +1,6 @@
 using FieldMonitoring.Application.Telemetry;
 using FieldMonitoring.Domain.Telemetry;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 
 namespace FieldMonitoring.Infrastructure.Persistence.SqlServer;
@@ -24,14 +25,20 @@ public class SqlServerIdempotencyAdapter : IIdempotencyStore
 
     public async Task MarkProcessedAsync(ProcessedReading processedReading, CancellationToken cancellationToken = default)
     {
-        // Verifica se já existe para evitar exceção de chave duplicada
-        var exists = await _dbContext.ProcessedReadings
-            .AnyAsync(x => x.ReadingId == processedReading.ReadingId, cancellationToken);
-
-        if (!exists)
+        try
         {
             _dbContext.ProcessedReadings.Add(processedReading);
             await _dbContext.SaveChangesAsync(cancellationToken);
         }
+        catch (DbUpdateException ex) when (IsDuplicateKey(ex))
+        {
+            // Chave duplicada: leitura já foi marcada por outra execução concorrente.
+        }
+    }
+
+    private static bool IsDuplicateKey(DbUpdateException exception)
+    {
+        return exception.InnerException is SqlException sqlException
+               && (sqlException.Number == 2627 || sqlException.Number == 2601);
     }
 }
