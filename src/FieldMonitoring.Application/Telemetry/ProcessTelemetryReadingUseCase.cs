@@ -51,15 +51,20 @@ public class ProcessTelemetryReadingUseCase
 
         try
         {
-            SensorReading reading = message.ToSensorReading();
-
-            if (!reading.IsValid(out var errorMessage))
+            SensorReading reading;
+            try
             {
-                _logger.LogWarning("Invalid reading {ReadingId} from field {FieldId}: {Error}",
-                    reading.ReadingId, reading.FieldId, errorMessage);
+                reading = message.ToSensorReading();
+            }
+            catch (InvalidOperationException ex)
+            {
+                _logger.LogWarning(ex,
+                    "Payload inválido para a leitura {ReadingId} do talhão {FieldId}.",
+                    message.ReadingId,
+                    message.FieldId);
 
-                FieldMonitoringTelemetry.MarkFailure(activity, "invalid-reading");
-                return ProcessingResult.Failed($"Leitura inválida: {errorMessage}");
+                FieldMonitoringTelemetry.MarkFailure(activity, "invalid-payload");
+                return ProcessingResult.NonRetryableFailure($"Leitura inválida: {ex.Message}");
             }
 
             if (await _idempotencyStore.ExistsAsync(reading.ReadingId, cancellationToken))
@@ -108,13 +113,13 @@ public class ProcessTelemetryReadingUseCase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Processing failed for reading {ReadingId} in field {FieldId}",
+            _logger.LogError(ex, "Falha ao processar a leitura {ReadingId} do talhão {FieldId}.",
                 message.ReadingId, message.FieldId);
 
             FieldMonitoringTelemetry.MarkFailure(activity, ex.Message);
             FieldMonitoringTelemetry.RecordException(activity, ex);
 
-            return ProcessingResult.Failed($"Erro no processamento: {ex.Message}");
+            return ProcessingResult.RetryableFailure("Falha transitória durante o processamento da leitura.");
         }
     }
 
@@ -147,21 +152,21 @@ public class ProcessTelemetryReadingUseCase
 
             if (!readingResult.IsSuccess)
             {
-                _logger.LogWarning("Failed to create mock reading: {Error}", readingResult.Error);
+                _logger.LogWarning("Falha ao criar leitura simulada: {Error}", readingResult.Error);
                 FieldMonitoringTelemetry.MarkFailure(activity, "invalid-mock-reading");
-                return ProcessingResult.Failed($"Leitura simulada inválida: {readingResult.Error}");
+                return ProcessingResult.NonRetryableFailure($"Leitura simulada inválida: {readingResult.Error}");
             }
 
             await _timeSeriesStore.AppendAsync(readingResult.Value!, cancellationToken);
             FieldMonitoringTelemetry.MarkSuccess(activity);
-            return new ProcessingResult(ProcessingStatus.Success, $"Leitura simulada inserida: {readingId}");
+            return ProcessingResult.Success($"Leitura simulada inserida: {readingId}");
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to insert mock reading into InfluxDB.");
+            _logger.LogError(ex, "Falha ao inserir leitura simulada no InfluxDB.");
             FieldMonitoringTelemetry.MarkFailure(activity, ex.Message);
             FieldMonitoringTelemetry.RecordException(activity, ex);
-            return ProcessingResult.Failed($"Falha ao inserir no InfluxDB: {ex.Message}");
+            return ProcessingResult.NonRetryableFailure("Falha ao inserir leitura simulada no InfluxDB.");
         }
     }
 
@@ -181,30 +186,7 @@ public class ProcessTelemetryReadingUseCase
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Failed to publish {AlertEventCount} alert events.", alertEvents.Count);
+            _logger.LogWarning(ex, "Falha ao publicar {AlertEventCount} eventos de alerta.", alertEvents.Count);
         }
     }
-}
-
-/// <summary>
-/// Status do processamento de uma leitura.
-/// </summary>
-public enum ProcessingStatus
-{
-    Success,
-    Skipped,
-    Failed
-}
-
-/// <summary>
-/// Resultado do processamento de uma leitura de telemetria.
-/// </summary>
-public sealed record ProcessingResult(ProcessingStatus Status, string? Message = null)
-{
-    public bool IsSuccess => Status is ProcessingStatus.Success or ProcessingStatus.Skipped;
-    public bool WasSkipped => Status is ProcessingStatus.Skipped;
-
-    public static ProcessingResult Success() => new(ProcessingStatus.Success);
-    public static ProcessingResult Skipped(string reason) => new(ProcessingStatus.Skipped, reason);
-    public static ProcessingResult Failed(string reason) => new(ProcessingStatus.Failed, reason);
 }

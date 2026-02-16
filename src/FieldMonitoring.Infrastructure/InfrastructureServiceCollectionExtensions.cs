@@ -11,6 +11,7 @@ using InfluxDB.Client;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 
 namespace FieldMonitoring.Infrastructure;
 
@@ -24,20 +25,26 @@ public static class InfrastructureServiceCollectionExtensions
     /// </summary>
     public static IServiceCollection AddInfrastructureServices(
         this IServiceCollection services,
-        IConfiguration configuration)
+        IConfiguration configuration,
+        IHostEnvironment environment)
     {
         // Database
         services.AddDbContext<FieldMonitoringDbContext>(options =>
         {
             var connectionString = configuration.GetConnectionString("SqlServer");
-            if (!string.IsNullOrEmpty(connectionString))
+            if (!string.IsNullOrWhiteSpace(connectionString))
             {
                 options.UseSqlServer(connectionString);
             }
-            else
+            else if (environment.IsDevelopment() || environment.IsEnvironment("Test"))
             {
                 // Use in-memory database for development/testing
                 options.UseInMemoryDatabase("FieldMonitoring");
+            }
+            else
+            {
+                throw new InvalidOperationException(
+                    "Connection string 'SqlServer' não configurada para o ambiente atual.");
             }
         });
 

@@ -1,6 +1,7 @@
 using System.Net.Http.Json;
 using FieldMonitoring.Application.Telemetry;
 using Microsoft.Extensions.DependencyInjection;
+using System.Net;
 
 namespace FieldMonitoring.Api.Tests.Telemetry;
 
@@ -74,5 +75,38 @@ public class QueryEncodingTests : IClassFixture<IntegrationTestFixture>
         var readings = await response.Content.ReadFromJsonAsync<List<ReadingDto>>();
         readings.Should().NotBeNull();
         readings!.Should().HaveCount(2);
+    }
+
+    [Fact]
+    public async Task HistoryEndpoint_WhenFromIsInvalid_ShouldReturnBadRequest()
+    {
+        // Act
+        HttpResponseMessage response = await _client.GetAsync(
+            "/monitoring/fields/field-QE-3/history?from=not-a-date&to=2026-01-01T00:00:00%2B00:00");
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task HistoryEndpoint_WhenFromIsGreaterThanTo_ShouldReturnBadRequest()
+    {
+        // Act
+        HttpResponseMessage response = await _client.GetAsync(
+            "/monitoring/fields/field-QE-4/history?from=2026-01-02T00:00:00%2B00:00&to=2026-01-01T00:00:00%2B00:00");
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task FarmAlertHistory_WhenToIsInvalid_ShouldReturnBadRequest()
+    {
+        // Act
+        HttpResponseMessage response = await _client.GetAsync(
+            "/monitoring/farms/farm-1/alerts/history?from=2026-01-01T00:00:00%2B00:00&to=invalid-date");
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 }

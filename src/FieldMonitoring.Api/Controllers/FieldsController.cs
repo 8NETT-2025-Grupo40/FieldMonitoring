@@ -1,4 +1,4 @@
-// ModelBinding removed: use native DateTimeOffset binder for query params
+using FieldMonitoring.Api.Utilities;
 using FieldMonitoring.Application.Alerts;
 using FieldMonitoring.Application.Fields;
 using FieldMonitoring.Application.Telemetry;
@@ -61,17 +61,25 @@ public class FieldsController : ControllerBase
     /// <returns>Lista de leituras no período informado.</returns>
     [HttpGet("{fieldId}/history")]
     [ProducesResponseType(typeof(IReadOnlyList<ReadingDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<IReadOnlyList<ReadingDto>>> GetHistory(
         string fieldId,
         [FromQuery] string? from,
         [FromQuery] string? to,
         CancellationToken cancellationToken = default)
     {
-        // Parse query params using a tolerant parser; accept encoded '+' or spaces.
-        var parsedTo = FieldMonitoring.Api.Utilities.QueryDateTimeOffsetParser.Parse(to) ?? DateTimeOffset.UtcNow;
-        var parsedFrom = FieldMonitoring.Api.Utilities.QueryDateTimeOffsetParser.Parse(from) ?? parsedTo.AddDays(-1);
+        if (!QueryDateTimeOffsetParser.TryResolveRange(
+                from,
+                to,
+                TimeSpan.FromDays(1),
+                out DateTimeOffset effectiveFrom,
+                out DateTimeOffset effectiveTo,
+                out string? validationMessage))
+        {
+            return BadRequest(validationMessage);
+        }
 
-        IReadOnlyList<ReadingDto> readings = await _fieldHistoryQuery.ExecuteAsync(fieldId, parsedFrom, parsedTo, cancellationToken);
+        IReadOnlyList<ReadingDto> readings = await _fieldHistoryQuery.ExecuteAsync(fieldId, effectiveFrom, effectiveTo, cancellationToken);
         return Ok(readings);
     }
 
@@ -101,13 +109,24 @@ public class FieldsController : ControllerBase
     /// <returns>Lista de alertas no período informado.</returns>
     [HttpGet("{fieldId}/alerts/history")]
     [ProducesResponseType(typeof(IReadOnlyList<AlertDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<IReadOnlyList<AlertDto>>> GetAlertHistory(
         string fieldId,
-        [FromQuery] DateTimeOffset? from,
-        [FromQuery] DateTimeOffset? to,
+        [FromQuery] string? from,
+        [FromQuery] string? to,
         CancellationToken cancellationToken)
     {
-        IReadOnlyList<AlertDto> result = await _alertHistoryQuery.ExecuteByFieldAsync(fieldId, from, to, cancellationToken);
+        if (!QueryDateTimeOffsetParser.TryParseRange(
+                from,
+                to,
+                out DateTimeOffset? parsedFrom,
+                out DateTimeOffset? parsedTo,
+                out string? validationMessage))
+        {
+            return BadRequest(validationMessage);
+        }
+
+        IReadOnlyList<AlertDto> result = await _alertHistoryQuery.ExecuteByFieldAsync(fieldId, parsedFrom, parsedTo, cancellationToken);
         return Ok(result);
     }
 }
