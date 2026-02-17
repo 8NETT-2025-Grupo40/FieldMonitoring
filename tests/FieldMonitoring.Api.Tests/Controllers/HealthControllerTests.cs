@@ -55,56 +55,56 @@ public class HealthControllerTests : IClassFixture<TestWebApplicationFactory>
         content.Checks.Should().ContainKey("sqlserver");
     }
 
-    //[Fact]
-    //public async Task GetReadiness_WhenInfluxEnabledAndBucketExists_ShouldReturnOk()
-    //{
-    //    using HttpClient client = CreateClientWithInfluxBucketProbe(new SuccessfulInfluxBucketProbe());
+    [Fact]
+    public async Task GetReadiness_WhenInfluxEnabledAndBucketExists_ShouldReturnOk()
+    {
+       using HttpClient client = CreateClientWithInfluxBucketProbe(new SuccessfulInfluxBucketProbe());
 
-    //    // Act
-    //    HttpResponseMessage response = await client.GetAsync("/monitoring/ready");
+       // Act
+       HttpResponseMessage response = await client.GetAsync("/monitoring/ready");
 
-    //    // Assert
-    //    response.StatusCode.Should().Be(HttpStatusCode.OK);
+       // Assert
+       response.StatusCode.Should().Be(HttpStatusCode.OK);
 
-    //    HealthResponse? content = await response.Content.ReadFromJsonAsync<HealthResponse>();
-    //    content.Should().NotBeNull();
-    //    content!.Status.Should().Be("Healthy");
-    //    content.Checks.Should().ContainKey("influxdb");
-    //}
+       HealthResponse? content = await response.Content.ReadFromJsonAsync<HealthResponse>();
+       content.Should().NotBeNull();
+       content!.Status.Should().Be("Healthy");
+       content.Checks.Should().ContainKey("influxdb");
+    }
 
-    //[Fact]
-    //public async Task GetReadiness_WhenInfluxEnabledAndBucketIsMissing_ShouldReturnServiceUnavailable()
-    //{
-    //    using HttpClient client = CreateClientWithInfluxBucketProbe(new MissingInfluxBucketProbe());
+    [Fact]
+    public async Task GetReadiness_WhenInfluxEnabledAndBucketIsMissing_ShouldReturnServiceUnavailable()
+    {
+       using HttpClient client = CreateClientWithInfluxBucketProbe(new MissingInfluxBucketProbe());
 
-    //    // Act
-    //    HttpResponseMessage response = await client.GetAsync("/monitoring/ready");
+       // Act
+       HttpResponseMessage response = await client.GetAsync("/monitoring/ready");
 
-    //    // Assert
-    //    response.StatusCode.Should().Be(HttpStatusCode.ServiceUnavailable);
+       // Assert
+       response.StatusCode.Should().Be(HttpStatusCode.ServiceUnavailable);
 
-    //    HealthResponse? content = await response.Content.ReadFromJsonAsync<HealthResponse>();
-    //    content.Should().NotBeNull();
-    //    content!.Status.Should().Be("Unhealthy");
-    //    content.Checks.Should().ContainKey("influxdb");
-    //}
+       HealthResponse? content = await response.Content.ReadFromJsonAsync<HealthResponse>();
+       content.Should().NotBeNull();
+       content!.Status.Should().Be("Unhealthy");
+       content.Checks.Should().ContainKey("influxdb");
+    }
 
-    //[Fact]
-    //public async Task GetReadiness_WhenInfluxEnabledAndProbeThrows_ShouldReturnServiceUnavailable()
-    //{
-    //    using HttpClient client = CreateClientWithInfluxBucketProbe(new ThrowingInfluxBucketProbe());
+    [Fact]
+    public async Task GetReadiness_WhenInfluxEnabledAndProbeThrows_ShouldReturnServiceUnavailable()
+    {
+       using HttpClient client = CreateClientWithInfluxBucketProbe(new ThrowingInfluxBucketProbe());
 
-    //    // Act
-    //    HttpResponseMessage response = await client.GetAsync("/monitoring/ready");
+       // Act
+       HttpResponseMessage response = await client.GetAsync("/monitoring/ready");
 
-    //    // Assert
-    //    response.StatusCode.Should().Be(HttpStatusCode.ServiceUnavailable);
+       // Assert
+       response.StatusCode.Should().Be(HttpStatusCode.ServiceUnavailable);
 
-    //    HealthResponse? content = await response.Content.ReadFromJsonAsync<HealthResponse>();
-    //    content.Should().NotBeNull();
-    //    content!.Status.Should().Be("Unhealthy");
-    //    content.Checks.Should().ContainKey("influxdb");
-    //}
+       HealthResponse? content = await response.Content.ReadFromJsonAsync<HealthResponse>();
+       content.Should().NotBeNull();
+       content!.Status.Should().Be("Unhealthy");
+       content.Checks.Should().ContainKey("influxdb");
+    }
 
     [Fact]
     public async Task GetLiveness_WhenAnyLiveCheckIsUnhealthy_ShouldReturnServiceUnavailable()
