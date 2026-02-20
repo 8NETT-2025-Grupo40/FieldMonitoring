@@ -105,7 +105,6 @@ public class TelemetryMessageBuilder
 /// </summary>
 public class RuleBuilder
 {
-    private Guid _ruleId = Guid.NewGuid();
     private RuleType _ruleType = RuleType.Dryness;
     private bool _isEnabled = true;
     private double _threshold = 30.0;
@@ -131,13 +130,6 @@ public class RuleBuilder
 
     public Rule Build()
     {
-        return new Rule
-        {
-            RuleId = _ruleId,
-            RuleType = _ruleType,
-            IsEnabled = _isEnabled,
-            Threshold = _threshold,
-            WindowHours = _windowHours
-        };
+        return Rule.Create(_ruleType, _threshold, _windowHours, _isEnabled);
     }
 }

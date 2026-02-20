@@ -1,17 +1,17 @@
 namespace FieldMonitoring.Domain.Telemetry;
 
 /// <summary>
-/// Represents the source of a sensor reading.
+/// Representa a origem de uma leitura de sensor.
 /// </summary>
 public enum ReadingSource
 {
     /// <summary>
-    /// Reading received via HTTP API.
+    /// Leitura recebida via API HTTP.
     /// </summary>
     Http = 1,
 
     /// <summary>
-    /// Reading received via MQTT protocol.
+    /// Leitura recebida via protocolo MQTT.
     /// </summary>
     Mqtt = 2
 }

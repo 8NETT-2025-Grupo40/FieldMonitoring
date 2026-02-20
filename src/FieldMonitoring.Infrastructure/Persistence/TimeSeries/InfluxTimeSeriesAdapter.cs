@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Text;
 using FieldMonitoring.Application.Telemetry;
+using FieldMonitoring.Domain;
 using FieldMonitoring.Domain.Telemetry;
 using InfluxDB.Client;
 using InfluxDB.Client.Api.Domain;

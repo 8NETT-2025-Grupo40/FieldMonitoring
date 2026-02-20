@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using FieldMonitoring.Application.Observability;
+using FieldMonitoring.Domain;
 using FieldMonitoring.Domain.Telemetry;
 using Microsoft.Extensions.Logging;
 

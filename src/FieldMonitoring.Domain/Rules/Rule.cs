@@ -7,112 +7,91 @@ namespace FieldMonitoring.Domain.Rules;
 public class Rule
 {
     /// <summary>
+    /// Construtor privado — força uso de factory methods.
+    /// </summary>
+    private Rule() { }
+
+    /// <summary>
     /// Identificador único da regra (Chave Primária).
     /// </summary>
-    public Guid RuleId { get; set; } = Guid.NewGuid();
+    public Guid RuleId { get; private set; } = Guid.NewGuid();
 
     /// <summary>
     /// Tipo da regra (Dryness, ExtremeHeat, Frost, DryAir, HumidAir).
     /// Determina qual avaliador usará esta regra.
     /// </summary>
-    public RuleType RuleType { get; set; }
+    public RuleType RuleType { get; private set; }
 
     /// <summary>
     /// Indica se a regra está atualmente habilitada.
     /// Regras desabilitadas não geram alertas.
     /// </summary>
-    public bool IsEnabled { get; set; } = true;
+    public bool IsEnabled { get; private set; } = true;
 
     /// <summary>
     /// Valor limite para a regra (ex: 30.0 para 30% de umidade, 40.0 para 40°C).
     /// </summary>
-    public double Threshold { get; set; }
+    public double Threshold { get; private set; }
 
     /// <summary>
     /// Janela de tempo em horas para avaliação da regra (ex: 24 horas).
     /// A condição deve persistir por este período para gerar alerta.
     /// </summary>
-    public int WindowHours { get; set; }
+    public int WindowHours { get; private set; }
 
     /// <summary>
     /// Timestamp da última atualização da regra.
     /// </summary>
-    public DateTimeOffset UpdatedAt { get; set; } = DateTimeOffset.UtcNow;
+    public DateTimeOffset UpdatedAt { get; private set; } = DateTimeOffset.UtcNow;
 
     /// <summary>
-    /// Cria uma regra de seca padrão (umidade do solo < 30% por 24 horas).
+    /// Cria uma nova regra de negócio com os parâmetros especificados.
+    /// </summary>
+    /// <param name="ruleType">Tipo da regra.</param>
+    /// <param name="threshold">Valor limite para a regra.</param>
+    /// <param name="windowHours">Janela de tempo em horas.</param>
+    /// <param name="isEnabled">Se a regra está habilitada (padrão: true).</param>
+    public static Rule Create(RuleType ruleType, double threshold, int windowHours, bool isEnabled = true)
+    {
+        return new Rule
+        {
+            RuleType = ruleType,
+            Threshold = threshold,
+            WindowHours = windowHours,
+            IsEnabled = isEnabled,
+            UpdatedAt = DateTimeOffset.UtcNow
+        };
+    }
+
+    /// <summary>
+    /// Cria uma regra de seca padrão (umidade do solo &lt; 30% por 24 horas).
     /// </summary>
     public static Rule CreateDefaultDrynessRule()
-    {
-        return new Rule
-        {
-            RuleType = RuleType.Dryness,
-            IsEnabled = true,
-            Threshold = 30.0,
-            WindowHours = 24,
-            UpdatedAt = DateTimeOffset.UtcNow
-        };
-    }
+        => Create(RuleType.Dryness, threshold: 30.0, windowHours: 24);
 
     /// <summary>
-    /// Cria uma regra de calor extremo padrão (temperatura do ar > 40°C por 4 horas).
+    /// Cria uma regra de calor extremo padrão (temperatura do ar &gt; 40°C por 4 horas).
     /// </summary>
     public static Rule CreateDefaultExtremeHeatRule()
-    {
-        return new Rule
-        {
-            RuleType = RuleType.ExtremeHeat,
-            IsEnabled = true,
-            Threshold = 40.0,
-            WindowHours = 4,
-            UpdatedAt = DateTimeOffset.UtcNow
-        };
-    }
+        => Create(RuleType.ExtremeHeat, threshold: 40.0, windowHours: 4);
 
     /// <summary>
-    /// Cria uma regra de geada padrão (temperatura do ar < 2°C por 2 horas).
+    /// Cria uma regra de geada padrão (temperatura do ar &lt; 2°C por 2 horas).
     /// </summary>
     public static Rule CreateDefaultFrostRule()
-    {
-        return new Rule
-        {
-            RuleType = RuleType.Frost,
-            IsEnabled = true,
-            Threshold = 2.0,
-            WindowHours = 2,
-            UpdatedAt = DateTimeOffset.UtcNow
-        };
-    }
+        => Create(RuleType.Frost, threshold: 2.0, windowHours: 2);
 
     /// <summary>
-    /// Cria uma regra de ar seco padrão (umidade do ar < 20% por 6 horas).
+    /// Cria uma regra de ar seco padrão (umidade do ar &lt; 20% por 6 horas).
     /// </summary>
     public static Rule CreateDefaultDryAirRule()
-    {
-        return new Rule
-        {
-            RuleType = RuleType.DryAir,
-            IsEnabled = true,
-            Threshold = 20.0,
-            WindowHours = 6,
-            UpdatedAt = DateTimeOffset.UtcNow
-        };
-    }
+        => Create(RuleType.DryAir, threshold: 20.0, windowHours: 6);
 
     /// <summary>
-    /// Cria uma regra de ar úmido padrão (umidade do ar > 90% por 12 horas).
+    /// Cria uma regra de ar úmido padrão (umidade do ar &gt; 90% por 12 horas).
     /// </summary>
     public static Rule CreateDefaultHumidAirRule()
-    {
-        return new Rule
-        {
-            RuleType = RuleType.HumidAir,
-            IsEnabled = true,
-            Threshold = 90.0,
-            WindowHours = 12,
-            UpdatedAt = DateTimeOffset.UtcNow
-        };
-    }
+        => Create(RuleType.HumidAir, threshold: 90.0, windowHours: 12);
 
     /// <summary>
     /// Retorna uma descrição legível da regra.

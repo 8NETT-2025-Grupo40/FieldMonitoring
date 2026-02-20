@@ -56,8 +56,11 @@ public class Field
     // Construtor privado - força uso de factory methods
     private Field(string fieldId, string farmId)
     {
-        FieldId = fieldId ?? throw new ArgumentNullException(nameof(fieldId));
-        FarmId = farmId ?? throw new ArgumentNullException(nameof(farmId));
+        ArgumentException.ThrowIfNullOrWhiteSpace(fieldId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(farmId);
+
+        FieldId = fieldId;
+        FarmId = farmId;
     }
 
     /// <summary>
@@ -69,13 +72,17 @@ public class Field
     }
 
     /// <summary>
-    /// Sincroniza o estado interno dos alertas com os alertas carregados.
-    /// Chamado pelo Repository após o EF carregar os alertas via Include.
+    /// Reidrata estado derivado do aggregate após carregamento pelo repositório.
     /// </summary>
-    public void SyncAlertStates()
+    public void Rehydrate()
+    {
+        RebuildAlertState();
+    }
+
+    private void RebuildAlertState()
     {
         _activeAlerts.Clear();
-        
+
         foreach (var alert in _alerts.Where(a => a.Status == AlertStatus.Active))
         {
             _activeAlerts[alert.AlertType] = true;
@@ -83,13 +90,16 @@ public class Field
     }
 
     /// <summary>
-    /// Carrega alertas ativos no aggregate (usado quando não há Include do EF).
+    /// Reidrata alertas no aggregate e recalcula estado derivado.
+    /// Útil em cenários sem Include automático do EF.
     /// </summary>
-    public void LoadAlerts(IEnumerable<Alert> alerts)
+    public void RehydrateAlerts(IEnumerable<Alert> alerts)
     {
+        ArgumentNullException.ThrowIfNull(alerts);
+
         _alerts.Clear();
         _alerts.AddRange(alerts);
-        SyncAlertStates();
+        Rehydrate();
     }
 
     /// <summary>
@@ -125,14 +135,6 @@ public class Field
         UpdateStatus();
 
         return true;
-    }
-
-    /// <summary>
-    /// Sobrecarga para manter compatibilidade com código existente.
-    /// </summary>
-    public bool ProcessReading(SensorReading reading, Rule drynessRule)
-    {
-        return ProcessReading(reading, new List<Rule> { drynessRule });
     }
 
     /// <summary>

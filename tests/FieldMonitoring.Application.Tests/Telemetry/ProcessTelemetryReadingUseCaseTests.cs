@@ -1,6 +1,7 @@
 using FieldMonitoring.Application.Alerts;
 using FieldMonitoring.Application.Fields;
 using FieldMonitoring.Application.Telemetry;
+using FieldMonitoring.Domain;
 using FieldMonitoring.Domain.Fields;
 using FieldMonitoring.Domain.Rules;
 using FieldMonitoring.Domain.Telemetry;
@@ -143,7 +144,7 @@ public class ProcessTelemetryReadingUseCaseTests
             farmId: "farm-1",
             timestamp: now,
             soilMoisturePercent: 45.0);
-        field.ProcessReading(baselineReading, Rule.CreateDefaultDrynessRule());
+        field.ProcessReading(baselineReading, [Rule.CreateDefaultDrynessRule()]);
 
         _idempotencyStore.ExistsAsync(message.ReadingId, Arg.Any<CancellationToken>())
             .Returns(false);

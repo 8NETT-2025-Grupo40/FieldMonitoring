@@ -85,13 +85,10 @@ public class ProcessTelemetryReadingUseCase
 
             IReadOnlyList<Rule> rules = _ruleSetProvider.GetRules();
 
-            ProcessedReading processedReading = new()
-            {
-                ReadingId = reading.ReadingId,
-                FieldId = reading.FieldId,
-                ProcessedAt = DateTimeOffset.UtcNow,
-                Source = reading.Source
-            };
+            ProcessedReading processedReading = ProcessedReading.Create(
+                reading.ReadingId,
+                reading.FieldId,
+                reading.Source);
 
             bool readingApplied;
             try

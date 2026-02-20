@@ -32,8 +32,8 @@ public class FieldRepository : IFieldRepository
         if (field == null)
             return null;
 
-        // Sincroniza estado interno _dryAlertActive com os alertas carregados
-        field.SyncAlertStates();
+        // Reidrata estado derivado do aggregate após materialização do EF
+        field.Rehydrate();
 
         return field;
     }

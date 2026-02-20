@@ -18,7 +18,11 @@ internal sealed class HumidAirRuleEvaluator : RuleEvaluatorBase
         if (reading.AirHumidity == null)
             return RuleEvaluationResult.NoAction();
 
-        AirHumidity thresholdHumidity = AirHumidity.FromPercent(rule.Threshold).Value!;
+        var thresholdResult = AirHumidity.FromPercent(rule.Threshold);
+        if (!thresholdResult.IsSuccess)
+            throw new InvalidOperationException($"Threshold inválido para regra de ar úmido: {thresholdResult.Error}");
+
+        AirHumidity thresholdHumidity = thresholdResult.Value!;
         var windowHours = rule.WindowHours;
 
         // Umidade abaixo ou igual ao threshold = condição normal

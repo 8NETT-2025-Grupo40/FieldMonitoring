@@ -9,7 +9,7 @@ public record AirHumidity
     /// <summary>
     /// Percentual de umidade do ar (0-100%).
     /// </summary>
-    public double Percent { get; init; }
+    public double Percent { get; }
 
     private AirHumidity(double percent)
     {

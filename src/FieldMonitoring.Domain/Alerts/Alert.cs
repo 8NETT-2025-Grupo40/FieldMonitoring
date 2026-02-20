@@ -7,59 +7,64 @@ namespace FieldMonitoring.Domain.Alerts;
 public class Alert
 {
     /// <summary>
+    /// Construtor privado para reidratação pelo EF Core.
+    /// </summary>
+    private Alert() { }
+
+    /// <summary>
     /// Identificador único do alerta (Chave Primária).
     /// Gerado automaticamente como GUID.
     /// </summary>
-    public Guid AlertId { get; set; } = Guid.NewGuid();
+    public Guid AlertId { get; private set; } = Guid.NewGuid();
 
     /// <summary>
     /// Identificador da fazenda onde o alerta foi gerado.
     /// </summary>
-    public required string FarmId { get; set; }
+    public string FarmId { get; private set; } = null!;
 
     /// <summary>
     /// Identificador do talhão onde o alerta foi gerado.
     /// </summary>
-    public required string FieldId { get; set; }
+    public string FieldId { get; private set; } = null!;
 
     /// <summary>
     /// Tipo do alerta (Dryness, ExtremeHeat, etc.).
     /// Determina qual regra de negócio gerou o alerta.
     /// </summary>
-    public AlertType AlertType { get; set; }
+    public AlertType AlertType { get; private set; }
 
     /// <summary>
     /// Nível de severidade do alerta (opcional).
     /// Pode ser usado para priorização no dashboard.
     /// </summary>
-    public int? Severity { get; set; }
+    public int? Severity { get; private set; }
 
     /// <summary>
     /// Status atual do ciclo de vida do alerta.
     /// Active = em andamento, Resolved = condição normalizada.
     /// </summary>
-    public AlertStatus Status { get; set; } = AlertStatus.Active;
+    public AlertStatus Status { get; private set; } = AlertStatus.Active;
 
     /// <summary>
     /// Razão legível para o alerta.
     /// Exemplo: "Umidade do solo abaixo de 30% por mais de 24 horas"
     /// </summary>
-    public string? Reason { get; set; }
+    public string? Reason { get; private set; }
 
     /// <summary>
     /// Timestamp de quando a condição de alerta iniciou.
     /// </summary>
-    public DateTimeOffset StartedAt { get; set; } = DateTimeOffset.UtcNow;
+    public DateTimeOffset StartedAt { get; private set; } = DateTimeOffset.UtcNow;
 
     /// <summary>
     /// Timestamp de quando o alerta foi resolvido (null se ainda ativo).
     /// </summary>
-    public DateTimeOffset? ResolvedAt { get; set; }
+    public DateTimeOffset? ResolvedAt { get; private set; }
 
     /// <summary>
     /// Timestamp de quando o registro do alerta foi criado.
     /// </summary>
-    public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
+    public DateTimeOffset CreatedAt { get; private set; } = DateTimeOffset.UtcNow;
 
     /// <summary>
     /// Marca o alerta como resolvido.
@@ -77,6 +82,10 @@ public class Alert
     /// </summary>
     public static Alert Create(AlertType type, string farmId, string fieldId, string reason)
     {
+        ArgumentException.ThrowIfNullOrWhiteSpace(farmId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(fieldId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(reason);
+
         return new Alert
         {
             FarmId = farmId,
@@ -90,19 +99,4 @@ public class Alert
         };
     }
 
-    // Factory methods legados mantidos para compatibilidade
-    public static Alert CreateDrynessAlert(string farmId, string fieldId, string reason)
-        => Create(AlertType.Dryness, farmId, fieldId, reason);
-
-    public static Alert CreateExtremeHeatAlert(string farmId, string fieldId, string reason)
-        => Create(AlertType.ExtremeHeat, farmId, fieldId, reason);
-
-    public static Alert CreateFrostAlert(string farmId, string fieldId, string reason)
-        => Create(AlertType.Frost, farmId, fieldId, reason);
-
-    public static Alert CreateDryAirAlert(string farmId, string fieldId, string reason)
-        => Create(AlertType.DryAir, farmId, fieldId, reason);
-
-    public static Alert CreateHumidAirAlert(string farmId, string fieldId, string reason)
-        => Create(AlertType.HumidAir, farmId, fieldId, reason);
 }

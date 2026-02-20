@@ -1,3 +1,4 @@
+using FieldMonitoring.Domain;
 using FieldMonitoring.Domain.Telemetry;
 
 namespace FieldMonitoring.Application.Telemetry;

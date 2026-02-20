@@ -1,17 +1,17 @@
 namespace FieldMonitoring.Domain.Alerts;
 
 /// <summary>
-/// Represents the lifecycle status of an alert.
+/// Representa o status do ciclo de vida de um alerta.
 /// </summary>
 public enum AlertStatus
 {
     /// <summary>
-    /// The alert condition is currently active.
+    /// A condição de alerta está atualmente ativa.
     /// </summary>
     Active = 1,
 
     /// <summary>
-    /// The alert condition has ceased and the alert was resolved.
+    /// A condição de alerta cessou e o alerta foi resolvido.
     /// </summary>
     Resolved = 2
 }

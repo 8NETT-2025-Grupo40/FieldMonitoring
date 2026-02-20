@@ -9,7 +9,7 @@ public record Temperature
     /// <summary>
     /// Temperatura em graus Celsius.
     /// </summary>
-    public double Celsius { get; init; }
+    public double Celsius { get; }
 
     private Temperature(double celsius)
     {

@@ -33,6 +33,36 @@ public class FieldTests
         act.Should().Throw<ArgumentNullException>();
     }
 
+    [Fact]
+    public void Create_WhenNullFarmId_ShouldThrowException()
+    {
+        // Act
+        Action act = () => Field.Create("field-1", null!);
+
+        // Assert
+        act.Should().Throw<ArgumentNullException>();
+    }
+
+    [Fact]
+    public void Create_WhenFieldIdIsWhitespace_ShouldThrowException()
+    {
+        // Act
+        Action act = () => Field.Create("   ", "farm-1");
+
+        // Assert
+        act.Should().Throw<ArgumentException>();
+    }
+
+    [Fact]
+    public void Create_WhenFarmIdIsWhitespace_ShouldThrowException()
+    {
+        // Act
+        Action act = () => Field.Create("field-1", "  ");
+
+        // Assert
+        act.Should().Throw<ArgumentException>();
+    }
+
     #endregion
 
     #region ProcessReading Tests
@@ -43,10 +73,10 @@ public class FieldTests
         // Arrange
         Field field = Field.Create("field-1", "farm-1");
         SensorReading reading = CreateReading("field-1", soilMoisture: 45.0);
-        Rule rule = CreateDrynessRule(threshold: 30.0);
+        var rules = CreateDrynessRules(threshold: 30.0);
 
         // Act
-        field.ProcessReading(reading, rule);
+        field.ProcessReading(reading, rules);
 
         // Assert
         field.LastSoilMoisture.Should().NotBeNull();
@@ -64,10 +94,10 @@ public class FieldTests
         // Arrange
         Field field = Field.Create("field-1", "farm-1");
         SensorReading reading = CreateReading("field-2", soilMoisture: 45.0);
-        Rule rule = CreateDrynessRule(threshold: 30.0);
+        var rules = CreateDrynessRules(threshold: 30.0);
 
         // Act
-        Action act = () => field.ProcessReading(reading, rule);
+        Action act = () => field.ProcessReading(reading, rules);
 
         // Assert
         act.Should().Throw<InvalidOperationException>()
@@ -80,10 +110,10 @@ public class FieldTests
         // Arrange
         Field field = Field.Create("field-1", "farm-1");
         SensorReading reading = CreateReading("field-1", soilMoisture: 45.0, farmId: "farm-2");
-        Rule rule = CreateDrynessRule(threshold: 30.0);
+        var rules = CreateDrynessRules(threshold: 30.0);
 
         // Act
-        Action act = () => field.ProcessReading(reading, rule);
+        Action act = () => field.ProcessReading(reading, rules);
 
         // Assert
         act.Should().Throw<InvalidOperationException>()
@@ -95,13 +125,13 @@ public class FieldTests
     {
         // Arrange
         Field field = Field.Create("field-1", "farm-1");
-        Rule rule = CreateDrynessRule(threshold: 30.0, windowHours: 24);
+        var rules = CreateDrynessRules(threshold: 30.0, windowHours: 24);
 
         SensorReading reading1 = CreateReading("field-1", soilMoisture: 35.0, timestamp: DateTimeOffset.UtcNow.AddHours(-30));
-        field.ProcessReading(reading1, rule);
+        field.ProcessReading(reading1, rules);
 
         SensorReading reading2 = CreateReading("field-1", soilMoisture: 25.0, timestamp: DateTimeOffset.UtcNow);
-        field.ProcessReading(reading2, rule);
+        field.ProcessReading(reading2, rules);
 
         field.Status.Should().Be(FieldStatusType.DryAlert);
         field.LastReadingAt.Should().Be(reading2.Timestamp);
@@ -110,7 +140,7 @@ public class FieldTests
         SensorReading outOfOrderReading = CreateReading("field-1", soilMoisture: 45.0, timestamp: DateTimeOffset.UtcNow.AddHours(-10));
 
         // Act
-        var wasApplied = field.ProcessReading(outOfOrderReading, rule);
+        var wasApplied = field.ProcessReading(outOfOrderReading, rules);
 
         // Assert
         wasApplied.Should().BeFalse();
@@ -126,10 +156,10 @@ public class FieldTests
         // Arrange
         Field field = Field.Create("field-1", "farm-1");
         SensorReading reading = CreateReading("field-1", soilMoisture: 50.0);
-        Rule rule = CreateDrynessRule(threshold: 30.0);
+        var rules = CreateDrynessRules(threshold: 30.0);
 
         // Act
-        field.ProcessReading(reading, rule);
+        field.ProcessReading(reading, rules);
 
         // Assert
         field.Status.Should().Be(FieldStatusType.Normal);
@@ -145,17 +175,17 @@ public class FieldTests
     {
         // Arrange
         Field field = Field.Create("field-1", "farm-1");
-        Rule rule = CreateDrynessRule(threshold: 30.0, windowHours: 24);
+        var rules = CreateDrynessRules(threshold: 30.0, windowHours: 24);
 
         // Primeira leitura normal
         SensorReading reading1 = CreateReading("field-1", soilMoisture: 35.0, timestamp: DateTimeOffset.UtcNow.AddHours(-10));
-        field.ProcessReading(reading1, rule);
+        field.ProcessReading(reading1, rules);
 
         // Segunda leitura abaixo do threshold, mas há apenas 5 horas
         SensorReading reading2 = CreateReading("field-1", soilMoisture: 25.0, timestamp: DateTimeOffset.UtcNow.AddHours(-5));
 
         // Act
-        field.ProcessReading(reading2, rule);
+        field.ProcessReading(reading2, rules);
 
         // Assert
         field.Status.Should().Be(FieldStatusType.Normal);
@@ -167,17 +197,17 @@ public class FieldTests
     {
         // Arrange
         Field field = Field.Create("field-1", "farm-1");
-        Rule rule = CreateDrynessRule(threshold: 30.0, windowHours: 24);
+        var rules = CreateDrynessRules(threshold: 30.0, windowHours: 24);
 
         // Primeira leitura normal (estabelece baseline)
         SensorReading reading1 = CreateReading("field-1", soilMoisture: 35.0, timestamp: DateTimeOffset.UtcNow.AddHours(-30));
-        field.ProcessReading(reading1, rule);
+        field.ProcessReading(reading1, rules);
 
         // Segunda leitura abaixo do threshold por > 24 horas
         SensorReading reading2 = CreateReading("field-1", soilMoisture: 25.0, timestamp: DateTimeOffset.UtcNow);
 
         // Act
-        field.ProcessReading(reading2, rule);
+        field.ProcessReading(reading2, rules);
 
         // Assert
         field.Status.Should().Be(FieldStatusType.DryAlert);
@@ -192,13 +222,13 @@ public class FieldTests
     {
         // Arrange
         Field field = Field.Create("field-1", "farm-1");
-        Rule rule = CreateDrynessRule(threshold: 30.0, windowHours: 24);
+        var rules = CreateDrynessRules(threshold: 30.0, windowHours: 24);
 
         // Cria condição de seca
         SensorReading reading1 = CreateReading("field-1", soilMoisture: 35.0, timestamp: DateTimeOffset.UtcNow.AddHours(-30));
-        field.ProcessReading(reading1, rule);
+        field.ProcessReading(reading1, rules);
         SensorReading reading2 = CreateReading("field-1", soilMoisture: 25.0, timestamp: DateTimeOffset.UtcNow.AddHours(-1));
-        field.ProcessReading(reading2, rule);
+        field.ProcessReading(reading2, rules);
 
         field.Status.Should().Be(FieldStatusType.DryAlert); // Confirma alerta ativo
 
@@ -206,7 +236,7 @@ public class FieldTests
         SensorReading reading3 = CreateReading("field-1", soilMoisture: 40.0, timestamp: DateTimeOffset.UtcNow);
 
         // Act
-        field.ProcessReading(reading3, rule);
+        field.ProcessReading(reading3, rules);
 
         // Assert
         field.Status.Should().Be(FieldStatusType.Normal);
@@ -220,13 +250,13 @@ public class FieldTests
     {
         // Arrange
         Field field = Field.Create("field-1", "farm-1");
-        Rule rule = CreateDrynessRule(threshold: 30.0, windowHours: 24);
+        var rules = CreateDrynessRules(threshold: 30.0, windowHours: 24);
 
         // Cria primeiro alerta
         SensorReading reading1 = CreateReading("field-1", soilMoisture: 35.0, timestamp: DateTimeOffset.UtcNow.AddHours(-30));
-        field.ProcessReading(reading1, rule);
+        field.ProcessReading(reading1, rules);
         SensorReading reading2 = CreateReading("field-1", soilMoisture: 25.0, timestamp: DateTimeOffset.UtcNow.AddHours(-1));
-        field.ProcessReading(reading2, rule);
+        field.ProcessReading(reading2, rules);
 
         var initialAlertCount = field.Alerts.Count;
 
@@ -234,7 +264,7 @@ public class FieldTests
         SensorReading reading3 = CreateReading("field-1", soilMoisture: 20.0, timestamp: DateTimeOffset.UtcNow);
 
         // Act
-        field.ProcessReading(reading3, rule);
+        field.ProcessReading(reading3, rules);
 
         // Assert
         field.Alerts.Should().HaveCount(initialAlertCount); // Não duplicou
@@ -246,11 +276,11 @@ public class FieldTests
     {
         // Arrange
         Field field = Field.Create("field-1", "farm-1");
-        Rule rule = CreateDrynessRule(threshold: 30.0, windowHours: 24);
+        var rules = CreateDrynessRules(threshold: 30.0, windowHours: 24);
         SensorReading reading = CreateReading("field-1", soilMoisture: 30.0, timestamp: DateTimeOffset.UtcNow);
 
         // Act
-        field.ProcessReading(reading, rule);
+        field.ProcessReading(reading, rules);
 
         // Assert
         field.Status.Should().Be(FieldStatusType.Normal);
@@ -262,13 +292,13 @@ public class FieldTests
     {
         // Arrange
         Field field = Field.Create("field-1", "farm-1");
-        Rule rule = CreateDrynessRule(threshold: 30.0, windowHours: 24);
+        var rules = CreateDrynessRules(threshold: 30.0, windowHours: 24);
 
         // Primeira leitura já abaixo do threshold (sem histórico prévio)
         SensorReading reading = CreateReading("field-1", soilMoisture: 20.0, timestamp: DateTimeOffset.UtcNow);
 
         // Act
-        field.ProcessReading(reading, rule);
+        field.ProcessReading(reading, rules);
 
         // Assert
         // Campo novo sem histórico = assume condições normais no início
@@ -286,13 +316,13 @@ public class FieldTests
     {
         // Arrange
         Field field = Field.Create("field-1", "farm-1");
-        Rule rule = CreateDrynessRule(threshold: 30.0, windowHours: 24);
+        var rules = CreateDrynessRules(threshold: 30.0, windowHours: 24);
 
         // Cria alerta
         SensorReading reading1 = CreateReading("field-1", soilMoisture: 35.0, timestamp: DateTimeOffset.UtcNow.AddHours(-30));
-        field.ProcessReading(reading1, rule);
+        field.ProcessReading(reading1, rules);
         SensorReading reading2 = CreateReading("field-1", soilMoisture: 25.0, timestamp: DateTimeOffset.UtcNow);
-        field.ProcessReading(reading2, rule);
+        field.ProcessReading(reading2, rules);
 
         // Assert
         field.Status.Should().Be(FieldStatusType.DryAlert);
@@ -304,11 +334,11 @@ public class FieldTests
     {
         // Arrange
         Field field = Field.Create("field-1", "farm-1");
-        Rule rule = CreateDrynessRule(threshold: 30.0, windowHours: 24);
+        var rules = CreateDrynessRules(threshold: 30.0, windowHours: 24);
         SensorReading reading = CreateReading("field-1", soilMoisture: 50.0, timestamp: DateTimeOffset.UtcNow);
 
         // Act
-        field.ProcessReading(reading, rule);
+        field.ProcessReading(reading, rules);
 
         // Assert
         field.Status.Should().Be(FieldStatusType.Normal);
@@ -317,20 +347,20 @@ public class FieldTests
 
     #endregion
 
-    #region LoadAlerts Tests
+    #region RehydrateAlerts Tests
 
     [Fact]
-    public void LoadAlerts_WhenAlertsProvided_ShouldLoadAlertsAndDeriveDryAlertActive()
+    public void RehydrateAlerts_WhenAlertsProvided_ShouldLoadAlertsAndDeriveDryAlertActive()
     {
         // Arrange
         Field field = Field.Create("field-1", "farm-1");
         List<Alert> alerts = new List<Alert>
         {
-            Alert.CreateDrynessAlert("farm-1", "field-1", "Test alert")
+            Alert.Create(AlertType.Dryness, "farm-1", "field-1", "Test alert")
         };
 
         // Act
-        field.LoadAlerts(alerts);
+        field.RehydrateAlerts(alerts);
 
         // Assert
         field.Alerts.Should().HaveCount(1);
@@ -339,15 +369,15 @@ public class FieldTests
     }
 
     [Fact]
-    public void LoadAlerts_WhenEmptyAlerts_ShouldClearExistingAlerts()
+    public void RehydrateAlerts_WhenEmptyAlerts_ShouldClearExistingAlerts()
     {
         // Arrange
         Field field = Field.Create("field-1", "farm-1");
-        field.LoadAlerts(new List<Alert> { Alert.CreateDrynessAlert("farm-1", "field-1", "Test") });
+        field.RehydrateAlerts(new List<Alert> { Alert.Create(AlertType.Dryness, "farm-1", "field-1", "Test") });
         field.Alerts.Should().HaveCount(1); // Confirma que tem alerta
 
         // Act
-        field.LoadAlerts(new List<Alert>());
+        field.RehydrateAlerts(new List<Alert>());
 
         // Assert
         field.Alerts.Should().BeEmpty();
@@ -380,16 +410,9 @@ public class FieldTests
         return result.Value!; // Assumindo valores válidos nos testes
     }
 
-    private static Rule CreateDrynessRule(double threshold, int windowHours = 24)
+    private static IReadOnlyList<Rule> CreateDrynessRules(double threshold, int windowHours = 24)
     {
-        return new Rule
-        {
-            RuleId = Guid.NewGuid(),
-            RuleType = RuleType.Dryness,
-            IsEnabled = true,
-            Threshold = threshold,
-            WindowHours = windowHours
-        };
+        return [Rule.Create(RuleType.Dryness, threshold, windowHours)];
     }
 
     #endregion

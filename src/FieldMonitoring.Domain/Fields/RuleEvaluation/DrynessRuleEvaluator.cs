@@ -15,7 +15,11 @@ internal sealed class DrynessRuleEvaluator : RuleEvaluatorBase
 
     public override RuleEvaluationResult Evaluate(SensorReading reading, Rule rule, RuleEvaluationContext context)
     {
-        SoilMoisture thresholdMoisture = SoilMoisture.FromPercent(rule.Threshold).Value!;
+        var thresholdResult = SoilMoisture.FromPercent(rule.Threshold);
+        if (!thresholdResult.IsSuccess)
+            throw new InvalidOperationException($"Threshold inválido para regra de seca: {thresholdResult.Error}");
+
+        SoilMoisture thresholdMoisture = thresholdResult.Value!;
         var windowHours = rule.WindowHours;
 
         // Umidade acima ou igual ao threshold = condição normal

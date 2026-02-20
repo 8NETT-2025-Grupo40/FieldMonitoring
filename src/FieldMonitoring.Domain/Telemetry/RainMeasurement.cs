@@ -9,7 +9,7 @@ public record RainMeasurement
     /// <summary>
     /// Quantidade de chuva em milímetros.
     /// </summary>
-    public double Millimeters { get; init; }
+    public double Millimeters { get; }
 
     private RainMeasurement(double millimeters)
     {

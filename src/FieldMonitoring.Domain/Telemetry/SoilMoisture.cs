@@ -9,7 +9,7 @@ public record SoilMoisture
     /// <summary>
     /// Percentual de umidade do solo (0-100%).
     /// </summary>
-    public double Percent { get; init; }
+    public double Percent { get; }
 
     private SoilMoisture(double percent)
     {
@@ -47,24 +47,4 @@ public record SoilMoisture
     public bool IsAbove(SoilMoisture threshold) => Percent > threshold.Percent;
 
     public override string ToString() => $"{Percent:F1}%";
-}
-
-/// <summary>
-/// Tipo genérico para representar resultado de operações com validação.
-/// </summary>
-public record Result<T>
-{
-    public bool IsSuccess { get; init; }
-    public T? Value { get; init; }
-    public string? Error { get; init; }
-
-    private Result(bool isSuccess, T? value, string? error)
-    {
-        IsSuccess = isSuccess;
-        Value = value;
-        Error = error;
-    }
-
-    public static Result<T> Success(T value) => new(true, value, null);
-    public static Result<T> Failure(string error) => new(false, default, error);
 }

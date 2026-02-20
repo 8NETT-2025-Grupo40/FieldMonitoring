@@ -18,7 +18,11 @@ internal sealed class FrostRuleEvaluator : RuleEvaluatorBase
         if (reading.AirTemperature == null)
             return RuleEvaluationResult.NoAction();
 
-        Temperature thresholdTemp = Temperature.FromCelsius(rule.Threshold).Value!;
+        var thresholdResult = Temperature.FromCelsius(rule.Threshold);
+        if (!thresholdResult.IsSuccess)
+            throw new InvalidOperationException($"Threshold inválido para regra de geada: {thresholdResult.Error}");
+
+        Temperature thresholdTemp = thresholdResult.Value!;
         var windowHours = rule.WindowHours;
 
         // Temperatura acima ou igual ao threshold = condição normal (strict: <)

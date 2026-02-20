@@ -1,32 +1,32 @@
 namespace FieldMonitoring.Domain.Rules;
 
 /// <summary>
-/// Represents the type of business rule for alert evaluation.
+/// Representa o tipo de regra de negócio para avaliação de alertas.
 /// </summary>
 public enum RuleType
 {
     /// <summary>
-    /// Rule for detecting dry conditions based on soil moisture.
+    /// Regra para detecção de condições de seca baseada na umidade do solo.
     /// </summary>
     Dryness = 1,
 
     /// <summary>
-    /// Rule for detecting extreme heat based on air temperature.
+    /// Regra para detecção de calor extremo baseada na temperatura do ar.
     /// </summary>
     ExtremeHeat = 3,
 
     /// <summary>
-    /// Rule for detecting frost/freezing conditions based on air temperature.
+    /// Regra para detecção de geada/congelamento baseada na temperatura do ar.
     /// </summary>
     Frost = 4,
 
     /// <summary>
-    /// Rule for detecting dry air conditions based on air humidity.
+    /// Regra para detecção de ar seco baseada na umidade do ar.
     /// </summary>
     DryAir = 5,
 
     /// <summary>
-    /// Rule for detecting humid air conditions based on air humidity.
+    /// Regra para detecção de ar úmido baseada na umidade do ar.
     /// </summary>
     HumidAir = 6
 }
