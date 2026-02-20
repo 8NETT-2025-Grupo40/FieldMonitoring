@@ -31,7 +31,7 @@ public class ProcessedReadingConfiguration : IEntityTypeConfiguration<ProcessedR
             .HasMaxLength(20)
             .IsRequired();
 
-        // Index for queries
+        // Índice para consultas por talhão
         builder.HasIndex(x => x.FieldId);
     }
 }

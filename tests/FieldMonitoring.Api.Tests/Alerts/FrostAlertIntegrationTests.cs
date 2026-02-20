@@ -1,6 +1,7 @@
 using System.Net.Http.Json;
 using FieldMonitoring.Application.Alerts;
 using FieldMonitoring.Application.Telemetry;
+using FieldMonitoring.Domain.Alerts;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace FieldMonitoring.Api.Tests.Alerts;
@@ -57,8 +58,8 @@ public class FrostAlertIntegrationTests : IClassFixture<IntegrationTestFixture>
         var alerts = await response.Content.ReadFromJsonAsync<List<AlertDto>>();
         alerts.Should().NotBeNull();
         alerts!.Should().HaveCount(1);
-        alerts[0].AlertType.ToString().Should().Be("Frost");
-        alerts[0].Status.ToString().Should().Be("Active");
+        alerts[0].AlertType.Should().Be(AlertType.Frost);
+        alerts[0].Status.Should().Be(AlertStatus.Active);
     }
 
     [Fact]
@@ -116,7 +117,7 @@ public class FrostAlertIntegrationTests : IClassFixture<IntegrationTestFixture>
         var historyAlerts = await historyResponse.Content.ReadFromJsonAsync<List<AlertDto>>();
         historyAlerts.Should().NotBeNull();
         historyAlerts!.Should().HaveCount(1);
-        historyAlerts[0].Status.ToString().Should().Be("Resolved");
+        historyAlerts[0].Status.Should().Be(AlertStatus.Resolved);
     }
 
     [Fact]
@@ -272,6 +273,6 @@ public class FrostAlertIntegrationTests : IClassFixture<IntegrationTestFixture>
         // Assert - Deve criar alerta de geada
         alerts.Should().NotBeNull();
         alerts!.Should().HaveCount(1);
-        alerts[0].AlertType.ToString().Should().Be("Frost");
+        alerts[0].AlertType.Should().Be(AlertType.Frost);
     }
 }

@@ -6,58 +6,34 @@ namespace FieldMonitoring.Domain.Fields.RuleEvaluation;
 
 /// <summary>
 /// Avaliador da regra de geada (Frost).
-/// Gera alerta quando a temperatura do ar fica abaixo do threshold por tempo >= WindowHours.
 /// </summary>
 internal sealed class FrostRuleEvaluator : RuleEvaluatorBase
 {
     public override RuleType RuleType => RuleType.Frost;
     public override AlertType AlertType => AlertType.Frost;
 
-    public override RuleEvaluationResult Evaluate(SensorReading reading, Rule rule, RuleEvaluationContext context)
+    protected override bool TryGetSensorValue(SensorReading reading, out double sensorValue)
     {
         if (reading.AirTemperature == null)
-            return RuleEvaluationResult.NoAction();
-
-        var thresholdResult = Temperature.FromCelsius(rule.Threshold);
-        if (!thresholdResult.IsSuccess)
-            throw new InvalidOperationException($"Threshold inválido para regra de geada: {thresholdResult.Error}");
-
-        Temperature thresholdTemp = thresholdResult.Value!;
-        var windowHours = rule.WindowHours;
-
-        // Temperatura acima ou igual ao threshold = condição normal (strict: <)
-        if (reading.AirTemperature.Celsius >= thresholdTemp.Celsius)
         {
-            context.SetLastTimeNormal(RuleType, reading.Timestamp);
-
-            if (context.IsAlertActive(AlertType))
-            {
-                context.SetAlertActive(AlertType, false);
-                return RuleEvaluationResult.ResolveAlert();
-            }
-
-            return RuleEvaluationResult.NoAction();
+            sensorValue = default;
+            return false;
         }
 
-        // Temperatura abaixo do threshold (strict) - primeira leitura inicializa tracking
-        var lastTimeNormal = context.GetLastTimeNormal(RuleType);
-        if (lastTimeNormal == null)
-        {
-            context.SetLastTimeNormal(RuleType, reading.Timestamp);
-            lastTimeNormal = reading.Timestamp;
-        }
-
-        // Verifica se excedeu a janela de tempo
-        if (IsConditionExceeded(lastTimeNormal, windowHours, reading.Timestamp) && 
-            !context.IsAlertActive(AlertType))
-        {
-            var hoursBelow = (reading.Timestamp - lastTimeNormal!.Value).TotalHours;
-            var reason = $"Temperatura do ar abaixo de {thresholdTemp.Celsius}°C por {hoursBelow:F0} horas (risco de geada)";
-            
-            context.SetAlertActive(AlertType, true);
-            return RuleEvaluationResult.RaiseAlert(reason);
-        }
-
-        return RuleEvaluationResult.NoAction();
+        sensorValue = reading.AirTemperature.Celsius;
+        return true;
     }
+
+    protected override void ValidateThreshold(double threshold)
+    {
+        var result = Temperature.FromCelsius(threshold);
+        if (!result.IsSuccess)
+            throw new InvalidOperationException($"Threshold inválido para regra de geada: {result.Error}");
+    }
+
+    protected override bool IsConditionNormal(double sensorValue, double threshold)
+        => sensorValue >= threshold;
+
+    protected override string BuildAlertReason(double threshold, double hoursInCondition)
+        => $"Temperatura do ar abaixo de {threshold}°C por {hoursInCondition:F0} horas (risco de geada)";
 }

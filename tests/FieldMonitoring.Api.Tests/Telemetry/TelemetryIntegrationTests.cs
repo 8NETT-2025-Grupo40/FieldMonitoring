@@ -103,7 +103,7 @@ public class TelemetryIntegrationTests : IClassFixture<IntegrationTestFixture>
             var result2 = await useCase.ExecuteAsync(message);
 
             // Assert - Segunda execução deve ser ignorada (idempotente)
-            result2.ToString().Should().Contain("Skipped");
+            result2.WasSkipped.Should().BeTrue();
         }
     }
 

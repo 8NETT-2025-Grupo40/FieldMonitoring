@@ -7,8 +7,6 @@ namespace FieldMonitoring.Domain.Tests.Fields;
 
 public class FieldTests
 {
-    #region Create Tests
-
     [Fact]
     public void Create_WhenValidParameters_ShouldCreateFieldWithNormalStatus()
     {
@@ -62,10 +60,6 @@ public class FieldTests
         // Assert
         act.Should().Throw<ArgumentException>();
     }
-
-    #endregion
-
-    #region ProcessReading Tests
 
     [Fact]
     public void ProcessReading_WhenValidReading_ShouldUpdateLastReadingValues()
@@ -165,10 +159,6 @@ public class FieldTests
         field.Status.Should().Be(FieldStatusType.Normal);
         field.Alerts.Should().BeEmpty();
     }
-
-    #endregion
-
-    #region EvaluateDrynessRule Tests
 
     [Fact]
     public void EvaluateDrynessRule_WhenMoistureBelowThresholdButWithinWindow_ShouldNotCreateAlert()
@@ -288,7 +278,7 @@ public class FieldTests
     }
 
     [Fact]
-    public void EvaluateDrynessRule_WhenNewFieldWithNoHistory_ShouldCreateAlertImmediately()
+    public void EvaluateDrynessRule_WhenNewFieldWithNoHistory_ShouldNotCreateAlert()
     {
         // Arrange
         Field field = Field.Create("field-1", "farm-1");
@@ -306,10 +296,6 @@ public class FieldTests
         field.Status.Should().Be(FieldStatusType.Normal);
         field.Alerts.Should().BeEmpty();
     }
-
-    #endregion
-
-    #region UpdateStatus Tests
 
     [Fact]
     public void UpdateStatus_WhenDryAlertActive_ShouldSetDryAlertStatus()
@@ -345,10 +331,6 @@ public class FieldTests
         field.StatusReason.Should().Contain("dentro do esperado");
     }
 
-    #endregion
-
-    #region RehydrateAlerts Tests
-
     [Fact]
     public void RehydrateAlerts_WhenAlertsProvided_ShouldLoadAlertsAndDeriveDryAlertActive()
     {
@@ -383,10 +365,6 @@ public class FieldTests
         field.Alerts.Should().BeEmpty();
     }
 
-    #endregion
-
-    #region Helper Methods
-
     private static SensorReading CreateReading(
         string fieldId,
         double soilMoisture,
@@ -415,5 +393,4 @@ public class FieldTests
         return [Rule.Create(RuleType.Dryness, threshold, windowHours)];
     }
 
-    #endregion
 }

@@ -10,6 +10,12 @@ namespace FieldMonitoring.Infrastructure.Persistence.SqlServer;
 /// </summary>
 public class SqlServerIdempotencyAdapter : IIdempotencyStore
 {
+    /// <summary>Violação de chave primária/unique constraint (SQL Server error 2627).</summary>
+    private const int UniqueConstraintViolation = 2627;
+
+    /// <summary>Violação de índice único (SQL Server error 2601).</summary>
+    private const int UniqueIndexViolation = 2601;
+
     private readonly FieldMonitoringDbContext _dbContext;
 
     public SqlServerIdempotencyAdapter(FieldMonitoringDbContext dbContext)
@@ -39,6 +45,6 @@ public class SqlServerIdempotencyAdapter : IIdempotencyStore
     private static bool IsDuplicateKey(DbUpdateException exception)
     {
         return exception.InnerException is SqlException sqlException
-               && (sqlException.Number == 2627 || sqlException.Number == 2601);
+               && (sqlException.Number == UniqueConstraintViolation || sqlException.Number == UniqueIndexViolation);
     }
 }

@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using FieldMonitoring.Application.Fields;
 using FieldMonitoring.Application.Telemetry;
+using FieldMonitoring.Domain.Fields;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace FieldMonitoring.Api.Tests.Fields;
@@ -40,7 +41,7 @@ public class FieldIntegrationTests : IClassFixture<IntegrationTestFixture>
 
         var response1 = await _client.GetAsync("/monitoring/fields/field-3");
         var field1 = await response1.Content.ReadFromJsonAsync<FieldDetailDto>();
-        field1!.Status.ToString().Should().Be("Normal");
+        field1!.Status.Should().Be(FieldStatusType.Normal);
 
         // Act 1 - Transição para DryAlert
         var dryReading = new TelemetryMessageBuilder()
@@ -57,7 +58,7 @@ public class FieldIntegrationTests : IClassFixture<IntegrationTestFixture>
 
         var response2 = await _client.GetAsync("/monitoring/fields/field-3");
         var field2 = await response2.Content.ReadFromJsonAsync<FieldDetailDto>();
-        field2!.Status.ToString().Should().Be("DryAlert");
+        field2!.Status.Should().Be(FieldStatusType.DryAlert);
         field2.ActiveAlerts.Should().HaveCount(1);
 
         // Act 2 - Transição de volta para Normal
@@ -75,7 +76,7 @@ public class FieldIntegrationTests : IClassFixture<IntegrationTestFixture>
 
         var response3 = await _client.GetAsync("/monitoring/fields/field-3");
         var field3 = await response3.Content.ReadFromJsonAsync<FieldDetailDto>();
-        field3!.Status.ToString().Should().Be("Normal");
+        field3!.Status.Should().Be(FieldStatusType.Normal);
         field3.ActiveAlerts.Should().BeEmpty();
     }
 

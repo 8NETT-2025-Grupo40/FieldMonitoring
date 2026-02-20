@@ -113,7 +113,7 @@ public class HealthControllerTests : IClassFixture<TestWebApplicationFactory>
         using HttpClient client = HealthControllerTestClientFactory.CreateClientWithHealthCheck(
             _factory,
             "forced-live-unhealthy",
-            () => HealthCheckResult.Unhealthy("forcado"),
+            () => HealthCheckResult.Unhealthy("forçado"),
             "live");
 
         // Act
@@ -134,7 +134,7 @@ public class HealthControllerTests : IClassFixture<TestWebApplicationFactory>
         using HttpClient client = HealthControllerTestClientFactory.CreateClientWithHealthCheck(
             _factory,
             "forced-ready-degraded",
-            () => HealthCheckResult.Degraded("forcado"),
+            () => HealthCheckResult.Degraded("forçado"),
             "ready");
 
         // Act

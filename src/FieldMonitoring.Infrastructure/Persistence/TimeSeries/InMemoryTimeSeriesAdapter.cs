@@ -1,4 +1,3 @@
-using System.Collections.Concurrent;
 using FieldMonitoring.Application.Telemetry;
 using FieldMonitoring.Domain.Telemetry;
 
@@ -6,20 +5,24 @@ namespace FieldMonitoring.Infrastructure.Persistence.TimeSeries;
 
 /// <summary>
 /// Implementação in-memory do ITimeSeriesReadingsStore para MVP/testes.
-/// Substituir por implementação InfluxDB
+/// Substituir por implementação InfluxDB em produção.
 /// </summary>
 public class InMemoryTimeSeriesAdapter : ITimeSeriesReadingsStore
 {
-    private readonly ConcurrentDictionary<string, List<SensorReading>> _readings = new();
+    private readonly Dictionary<string, List<SensorReading>> _readings = new();
     private readonly object _lock = new();
 
     public Task AppendAsync(SensorReading reading, CancellationToken cancellationToken = default)
     {
         lock (_lock)
         {
-            List<SensorReading> list = _readings.GetOrAdd(reading.FieldId, _ => new List<SensorReading>());
+            if (!_readings.TryGetValue(reading.FieldId, out List<SensorReading>? list))
+            {
+                list = new List<SensorReading>();
+                _readings[reading.FieldId] = list;
+            }
             list.Add(reading);
-            // Keep sorted by timestamp
+            // Mantém ordenado por timestamp
             list.Sort((a, b) => a.Timestamp.CompareTo(b.Timestamp));
         }
         return Task.CompletedTask;

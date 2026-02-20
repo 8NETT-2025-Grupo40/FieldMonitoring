@@ -86,7 +86,7 @@ public class FarmsController : ControllerBase
                 out DateTimeOffset? parsedTo,
                 out string? validationMessage))
         {
-            return Problem(detail: validationMessage, statusCode: 400, title: "Parâmetro inválido");
+            return Problem(detail: validationMessage, statusCode: StatusCodes.Status400BadRequest, title: "Parâmetro inválido");
         }
 
         IReadOnlyList<AlertDto> result = await _alertHistoryQuery.ExecuteByFarmAsync(farmId, parsedFrom, parsedTo, cancellationToken);

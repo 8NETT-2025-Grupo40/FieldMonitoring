@@ -14,20 +14,13 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace FieldMonitoring.Infrastructure;
 
-/// <summary>
-/// Métodos de extensão para registrar serviços da camada Infrastructure.
-/// </summary>
 public static class InfrastructureServiceCollectionExtensions
 {
-    /// <summary>
-    /// Registra serviços da camada Infrastructure (adapters, DbContext, messaging).
-    /// </summary>
     public static IServiceCollection AddInfrastructureServices(
         this IServiceCollection services,
         IConfiguration configuration)
     {
-        // Database — configura SQL Server quando a connection string estiver presente.
-        // Testes de integração substituem o DbContext via ConfigureTestServices.
+        // Testes de integracao substituem o DbContext via ConfigureTestServices
         string? connectionString = configuration.GetConnectionString("SqlServer");
 
         services.AddDbContext<FieldMonitoringDbContext>(options =>
@@ -38,10 +31,7 @@ public static class InfrastructureServiceCollectionExtensions
             }
         });
 
-        // Repositories (DDD Aggregates)
         services.AddScoped<IFieldRepository, FieldRepository>();
-
-        // SQL Server adapters
         services.AddScoped<IAlertStore, SqlServerAlertAdapter>();
         services.AddScoped<IIdempotencyStore, SqlServerIdempotencyAdapter>();
 
@@ -69,18 +59,13 @@ public static class InfrastructureServiceCollectionExtensions
         return services;
     }
 
-    /// <summary>
-    /// Registra serviços de mensageria SQS.
-    /// </summary>
     public static IServiceCollection AddSqsMessaging(
         this IServiceCollection services,
         IConfiguration configuration)
     {
-        // Configure SQS options
         IConfigurationSection sqsSection = configuration.GetSection(SqsOptions.SectionName);
         services.Configure<SqsOptions>(sqsSection);
 
-        // Get region from configuration
         SqsOptions sqsOptions = new SqsOptions();
         sqsSection.Bind(sqsOptions);
         var region = sqsOptions.Region ?? "us-east-1";
@@ -94,7 +79,6 @@ public static class InfrastructureServiceCollectionExtensions
             return new AmazonSQSClient(config);
         });
 
-        // Register the background consumer service
         services.AddHostedService<SqsConsumerService>();
 
         return services;

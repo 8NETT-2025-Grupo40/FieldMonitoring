@@ -27,7 +27,7 @@ public class GetFieldDetailQuery
         ArgumentException.ThrowIfNullOrWhiteSpace(fieldId);
 
         Field? field = await _fieldRepository.GetByIdAsync(fieldId, cancellationToken);
-        if (field == null)
+        if (field is null)
         {
             return null;
         }

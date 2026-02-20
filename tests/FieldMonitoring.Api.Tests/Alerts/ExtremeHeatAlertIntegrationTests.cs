@@ -1,6 +1,7 @@
 using System.Net.Http.Json;
 using FieldMonitoring.Application.Alerts;
 using FieldMonitoring.Application.Telemetry;
+using FieldMonitoring.Domain.Alerts;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace FieldMonitoring.Api.Tests.Alerts;
@@ -57,8 +58,8 @@ public class ExtremeHeatAlertIntegrationTests : IClassFixture<IntegrationTestFix
         var alerts = await response.Content.ReadFromJsonAsync<List<AlertDto>>();
         alerts.Should().NotBeNull();
         alerts!.Should().HaveCount(1);
-        alerts[0].AlertType.ToString().Should().Be("ExtremeHeat");
-        alerts[0].Status.ToString().Should().Be("Active");
+        alerts[0].AlertType.Should().Be(AlertType.ExtremeHeat);
+        alerts[0].Status.Should().Be(AlertStatus.Active);
     }
 
     [Fact]
@@ -116,7 +117,7 @@ public class ExtremeHeatAlertIntegrationTests : IClassFixture<IntegrationTestFix
         var historyAlerts = await historyResponse.Content.ReadFromJsonAsync<List<AlertDto>>();
         historyAlerts.Should().NotBeNull();
         historyAlerts!.Should().HaveCount(1);
-        historyAlerts[0].Status.ToString().Should().Be("Resolved");
+        historyAlerts[0].Status.Should().Be(AlertStatus.Resolved);
     }
 
     [Fact]
@@ -271,6 +272,6 @@ public class ExtremeHeatAlertIntegrationTests : IClassFixture<IntegrationTestFix
 
         // Assert - Não deve criar alerta de calor quando não há dados de temperatura do ar
         alerts.Should().NotBeNull();
-        alerts!.Where(a => a.AlertType.ToString() == "ExtremeHeat").Should().BeEmpty();
+        alerts!.Where(a => a.AlertType == AlertType.ExtremeHeat).Should().BeEmpty();
     }
 }

@@ -2,12 +2,15 @@ namespace FieldMonitoring.Domain.Telemetry;
 
 /// <summary>
 /// Value Object representando temperatura em graus Celsius.
-/// Encapsula validação de range realista para agricultura.
+/// Range valido para agricultura: -50 a 60.
 /// </summary>
 public record Temperature
 {
+    private const double MinCelsius = -50;
+    private const double MaxCelsius = 60;
+
     /// <summary>
-    /// Temperatura em graus Celsius.
+    /// Valor em graus Celsius.
     /// </summary>
     public double Celsius { get; }
 
@@ -17,13 +20,11 @@ public record Temperature
     }
 
     /// <summary>
-    /// Cria uma instância de Temperature a partir de graus Celsius.
+    /// Cria uma instancia validada a partir de graus Celsius.
     /// </summary>
-    /// <param name="celsius">Temperatura em °C (-50 a 60).</param>
-    /// <returns>Result contendo Temperature se válido, ou erro.</returns>
     public static Result<Temperature> FromCelsius(double celsius)
     {
-        if (celsius < -50 || celsius > 60)
+        if (celsius < MinCelsius || celsius > MaxCelsius)
         {
             return Result<Temperature>.Failure(
                 $"Temperatura deve estar entre -50°C e 60°C, recebido: {celsius}°C");
@@ -33,4 +34,9 @@ public record Temperature
     }
 
     public override string ToString() => $"{Celsius:F1}°C";
+
+    public bool IsBelow(Temperature threshold) => Celsius < threshold.Celsius;
+    public bool IsAbove(Temperature threshold) => Celsius > threshold.Celsius;
+    public bool IsAtOrBelow(Temperature threshold) => Celsius <= threshold.Celsius;
+    public bool IsAtOrAbove(Temperature threshold) => Celsius >= threshold.Celsius;
 }

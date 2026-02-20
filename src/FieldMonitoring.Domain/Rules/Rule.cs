@@ -7,7 +7,7 @@ namespace FieldMonitoring.Domain.Rules;
 public class Rule
 {
     /// <summary>
-    /// Construtor privado — força uso de factory methods.
+    /// Construtor privado - força uso de factory methods.
     /// </summary>
     private Rule() { }
 

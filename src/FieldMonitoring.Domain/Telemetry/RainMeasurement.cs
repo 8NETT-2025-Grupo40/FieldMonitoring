@@ -1,13 +1,12 @@
 namespace FieldMonitoring.Domain.Telemetry;
 
 /// <summary>
-/// Value Object representando medição de chuva em milímetros.
-/// Encapsula validação de valores não-negativos.
+/// Value Object representando medicao de chuva em milimetros (>= 0).
 /// </summary>
 public record RainMeasurement
 {
     /// <summary>
-    /// Quantidade de chuva em milímetros.
+    /// Volume em milímetros.
     /// </summary>
     public double Millimeters { get; }
 
@@ -17,10 +16,8 @@ public record RainMeasurement
     }
 
     /// <summary>
-    /// Cria uma instância de RainMeasurement a partir de milímetros.
+    /// Cria uma instancia validada a partir de milimetros.
     /// </summary>
-    /// <param name="millimeters">Quantidade de chuva em mm (>= 0).</param>
-    /// <returns>Result contendo RainMeasurement se válido, ou erro.</returns>
     public static Result<RainMeasurement> FromMillimeters(double millimeters)
     {
         if (millimeters < 0)

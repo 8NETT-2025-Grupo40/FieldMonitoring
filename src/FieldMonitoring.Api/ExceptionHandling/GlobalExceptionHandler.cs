@@ -10,7 +10,7 @@ namespace FieldMonitoring.Api.ExceptionHandling;
 internal sealed class GlobalExceptionHandler : IExceptionHandler
 {
     /// <summary>
-    /// HTTP 499 — convenção (nginx) para requisição cancelada pelo cliente.
+    /// HTTP 499 - convenção (nginx) para requisição cancelada pelo cliente.
     /// Não existe em <see cref="StatusCodes"/>, por isso definimos aqui.
     /// </summary>
     private const int StatusClientClosedRequest = 499;

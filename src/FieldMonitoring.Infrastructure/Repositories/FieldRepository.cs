@@ -19,10 +19,6 @@ public class FieldRepository : IFieldRepository
         _context = context;
     }
 
-    /// <summary>
-    /// Carrega Field aggregate completo com alertas ativos.
-    /// EF Core carrega os alertas automaticamente via Include.
-    /// </summary>
     public async Task<Field?> GetByIdAsync(string fieldId, CancellationToken cancellationToken)
     {
         Field? field = await _context.Fields
@@ -32,38 +28,28 @@ public class FieldRepository : IFieldRepository
         if (field == null)
             return null;
 
-        // Reidrata estado derivado do aggregate após materialização do EF
         field.Rehydrate();
 
         return field;
     }
 
-    /// <summary>
-    /// Persiste Field aggregate (Field + Alerts).
-    /// Usa change tracking do EF Core - SaveChanges é atômico.
-    /// </summary>
     public async Task SaveAsync(Field field, CancellationToken cancellationToken)
     {
-        // Se Field está detached (novo ou veio de outro contexto)
         if (_context.Entry(field).State == EntityState.Detached)
         {
-            // Verifica se já existe no banco
             bool exists = await _context.Fields
                 .AnyAsync(f => f.FieldId == field.FieldId, cancellationToken);
 
             if (exists)
             {
-                // Attach e marcar como modificado
                 _context.Fields.Attach(field);
                 _context.Entry(field).State = EntityState.Modified;
             }
             else
             {
-                // Novo Field - Add marca Field e Alerts como Added
                 _context.Fields.Add(field);
             }
         }
-        // Se não está Detached, o change tracker já sabe o que fazer
 
         // Batch fetch dos IDs de alertas existentes para evitar N+1 queries
         var alertIds = field.Alerts.Select(a => a.AlertId).ToList();
@@ -85,7 +71,6 @@ public class FieldRepository : IFieldRepository
             }
         }
 
-        // SaveChanges persiste Field + Alerts em uma única transação
         await _context.SaveChangesAsync(cancellationToken);
     }
 

@@ -36,7 +36,7 @@ public class SimulationController : ControllerBase
         
         if (!result.IsSuccess)
         {
-            return Problem(detail: result.Message, statusCode: 400, title: "Falha no processamento da leitura");
+            return Problem(detail: result.Message, statusCode: StatusCodes.Status400BadRequest, title: "Falha no processamento da leitura");
         }
         
         return Ok(result);

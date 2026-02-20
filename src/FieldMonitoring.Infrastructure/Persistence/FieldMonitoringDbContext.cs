@@ -23,7 +23,7 @@ public class FieldMonitoringDbContext : DbContext
     {
         base.OnModelCreating(modelBuilder);
 
-        // Apply all configurations from this assembly
+        // Aplica todas as configurações deste assembly
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(FieldMonitoringDbContext).Assembly);
     }
 }

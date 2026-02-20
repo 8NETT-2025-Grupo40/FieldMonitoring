@@ -63,9 +63,7 @@ public static class FieldMonitoringTelemetry
     public static void SetReadingContext(Activity? activity, string? fieldId, string? farmId, string? source)
     {
         if (activity is null)
-        {
             return;
-        }
 
         if (!string.IsNullOrWhiteSpace(fieldId))
         {
@@ -84,16 +82,14 @@ public static class FieldMonitoringTelemetry
     }
 
     /// <summary>
-    /// Marca processamento como sucesso e registra se houve skip.
+    /// Marca processamento como sucesso e registra se foi ignorado.
     /// </summary>
     /// <param name="activity">Span atual.</param>
     /// <param name="skipped">Indica se o item foi ignorado.</param>
     public static void MarkSuccess(Activity? activity, bool skipped = false)
     {
         if (activity is null)
-        {
             return;
-        }
 
         activity.SetTag(AttributeProcessingStatus, skipped ? ProcessingStatusSkipped : ProcessingStatusSuccess);
 
@@ -112,12 +108,7 @@ public static class FieldMonitoringTelemetry
     /// <param name="count">Quantidade de eventos de alerta.</param>
     public static void SetAlertEventsCount(Activity? activity, int count)
     {
-        if (activity is null)
-        {
-            return;
-        }
-
-        activity.SetTag(AttributeProcessingAlertEventsCount, count);
+        activity?.SetTag(AttributeProcessingAlertEventsCount, count);
     }
 
     /// <summary>
@@ -128,9 +119,7 @@ public static class FieldMonitoringTelemetry
     public static void MarkFailure(Activity? activity, string reason)
     {
         if (activity is null)
-        {
             return;
-        }
 
         activity.SetTag(AttributeProcessingStatus, ProcessingStatusFailed);
         activity.SetStatus(ActivityStatusCode.Error, reason);
@@ -144,9 +133,7 @@ public static class FieldMonitoringTelemetry
     public static void RecordException(Activity? activity, Exception exception)
     {
         if (activity is null)
-        {
             return;
-        }
 
         activity.AddEvent(new ActivityEvent(
             "exception",

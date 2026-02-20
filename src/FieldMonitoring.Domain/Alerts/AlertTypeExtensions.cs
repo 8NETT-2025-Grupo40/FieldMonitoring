@@ -36,7 +36,7 @@ public static class AlertTypeExtensions
     };
 
     /// <summary>
-    /// Retorna uma descrição padrão para o alerta quando não há reason específica.
+    /// Retorna uma descrição padrão para o alerta quando não há razão específica.
     /// </summary>
     public static string GetDefaultReason(this AlertType type) => type switch
     {
@@ -45,6 +45,6 @@ public static class AlertTypeExtensions
         AlertType.Dryness => "Alerta de seca ativo",
         AlertType.DryAir => "Alerta de ar seco ativo",
         AlertType.HumidAir => "Alerta de ar úmido ativo",
-        _ => throw new ArgumentOutOfRangeException(nameof(type), type, "Tipo de alerta não suportado para reason padrão.")
+        _ => throw new ArgumentOutOfRangeException(nameof(type), type, "Tipo de alerta não suportado para razão padrão.")
     };
 }
