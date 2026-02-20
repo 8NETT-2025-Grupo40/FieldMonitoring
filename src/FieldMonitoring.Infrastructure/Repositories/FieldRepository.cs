@@ -65,17 +65,23 @@ public class FieldRepository : IFieldRepository
         }
         // Se não está Detached, o change tracker já sabe o que fazer
 
-        // Para alertas na coleção, garantir estado correto
+        // Batch fetch dos IDs de alertas existentes para evitar N+1 queries
+        var alertIds = field.Alerts.Select(a => a.AlertId).ToList();
+        var existingAlertIds = (await _context.Alerts
+            .Where(a => alertIds.Contains(a.AlertId))
+            .Select(a => a.AlertId)
+            .ToListAsync(cancellationToken))
+            .ToHashSet();
+
         foreach (Alert alert in field.Alerts)
         {
             var alertEntry = _context.Entry(alert);
             if (alertEntry.State == EntityState.Detached)
             {
-                bool alertExists = await _context.Alerts
-                    .AnyAsync(a => a.AlertId == alert.AlertId, cancellationToken);
-
                 _context.Alerts.Attach(alert);
-                alertEntry.State = alertExists ? EntityState.Modified : EntityState.Added;
+                alertEntry.State = existingAlertIds.Contains(alert.AlertId)
+                    ? EntityState.Modified
+                    : EntityState.Added;
             }
         }
 

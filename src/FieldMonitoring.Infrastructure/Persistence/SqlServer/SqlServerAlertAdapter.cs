@@ -18,7 +18,7 @@ public class SqlServerAlertAdapter : IAlertStore
 
     public async Task<IReadOnlyList<Alert>> GetActiveByFarmAsync(string farmId, CancellationToken cancellationToken = default)
     {
-        return await _dbContext.Alerts
+        return await _dbContext.Alerts.AsNoTracking()
             .Where(x => x.FarmId == farmId && x.Status == AlertStatus.Active)
             .OrderByDescending(x => x.StartedAt)
             .ToListAsync(cancellationToken);
@@ -26,7 +26,7 @@ public class SqlServerAlertAdapter : IAlertStore
 
     public async Task<IReadOnlyList<Alert>> GetActiveByFieldAsync(string fieldId, CancellationToken cancellationToken = default)
     {
-        return await _dbContext.Alerts
+        return await _dbContext.Alerts.AsNoTracking()
             .Where(x => x.FieldId == fieldId && x.Status == AlertStatus.Active)
             .OrderByDescending(x => x.StartedAt)
             .ToListAsync(cancellationToken);
@@ -38,7 +38,8 @@ public class SqlServerAlertAdapter : IAlertStore
         DateTimeOffset? to = null, 
         CancellationToken cancellationToken = default)
     {
-        IQueryable<Alert> query = _dbContext.Alerts.Where(x => x.FieldId == fieldId);
+        IQueryable<Alert> query = _dbContext.Alerts.AsNoTracking()
+            .Where(x => x.FieldId == fieldId);
 
         if (from.HasValue)
             query = query.Where(x => x.StartedAt >= from.Value);
@@ -57,7 +58,8 @@ public class SqlServerAlertAdapter : IAlertStore
         DateTimeOffset? to = null, 
         CancellationToken cancellationToken = default)
     {
-        IQueryable<Alert> query = _dbContext.Alerts.Where(x => x.FarmId == farmId);
+        IQueryable<Alert> query = _dbContext.Alerts.AsNoTracking()
+            .Where(x => x.FarmId == farmId);
 
         if (from.HasValue)
             query = query.Where(x => x.StartedAt >= from.Value);
@@ -72,12 +74,27 @@ public class SqlServerAlertAdapter : IAlertStore
 
     public async Task<Alert?> GetByIdAsync(Guid alertId, CancellationToken cancellationToken = default)
     {
-        return await _dbContext.Alerts.FirstOrDefaultAsync(x => x.AlertId == alertId, cancellationToken);
+        return await _dbContext.Alerts.AsNoTracking()
+            .FirstOrDefaultAsync(x => x.AlertId == alertId, cancellationToken);
     }
 
     public async Task<int> CountActiveByFieldAsync(string fieldId, CancellationToken cancellationToken = default)
     {
         return await _dbContext.Alerts
             .CountAsync(x => x.FieldId == fieldId && x.Status == AlertStatus.Active, cancellationToken);
+    }
+
+    public async Task<IReadOnlyDictionary<string, int>> CountActiveByFieldsAsync(
+        IEnumerable<string> fieldIds, CancellationToken cancellationToken = default)
+    {
+        var fieldIdList = fieldIds.ToList();
+
+        var counts = await _dbContext.Alerts
+            .Where(a => fieldIdList.Contains(a.FieldId) && a.Status == AlertStatus.Active)
+            .GroupBy(a => a.FieldId)
+            .Select(g => new { FieldId = g.Key, Count = g.Count() })
+            .ToListAsync(cancellationToken);
+
+        return counts.ToDictionary(x => x.FieldId, x => x.Count);
     }
 }

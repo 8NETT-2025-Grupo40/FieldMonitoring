@@ -14,8 +14,8 @@ internal static class HealthControllerTestClientFactory
     private const string SqsReadinessCheckName = "sqs";
     private const string ReadinessTag = "ready";
     private static readonly Type InfluxReadinessHealthCheckType =
-        typeof(Program).Assembly.GetType(
-            "FieldMonitoring.Api.HealthChecks.InfluxDbReadinessHealthCheck",
+        typeof(InfluxDbOptions).Assembly.GetType(
+            "FieldMonitoring.Infrastructure.HealthChecks.InfluxDbReadinessHealthCheck",
             throwOnError: true)!;
 
     public static HttpClient CreateClientWithHealthCheck(

@@ -20,7 +20,6 @@ public static class ApplicationServiceCollectionExtensions
 
         // Use Cases
         services.AddScoped<ProcessTelemetryReadingUseCase>();
-        services.AddScoped<InsertMockReadingUseCase>();
 
         // Queries
         services.AddScoped<GetFarmOverviewQuery>();
@@ -28,6 +27,7 @@ public static class ApplicationServiceCollectionExtensions
         services.AddScoped<GetFieldHistoryQuery>();
         services.AddScoped<GetActiveAlertsQuery>();
         services.AddScoped<GetAlertHistoryQuery>();
+        services.AddScoped<GetAlertByIdQuery>();
 
         return services;
     }

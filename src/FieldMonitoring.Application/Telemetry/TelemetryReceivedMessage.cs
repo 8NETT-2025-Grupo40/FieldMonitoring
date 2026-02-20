@@ -69,7 +69,7 @@ public sealed record TelemetryReceivedMessage
     /// Converte a mensagem para um SensorReading de domínio.
     /// Valida e cria Value Objects a partir dos primitivos.
     /// </summary>
-    public SensorReading ToSensorReading()
+    public Result<SensorReading> ToSensorReading()
     {
         ReadingSource source = Source?.ToLowerInvariant() switch
         {
@@ -77,7 +77,7 @@ public sealed record TelemetryReceivedMessage
             _ => ReadingSource.Http
         };
 
-        Result<SensorReading> result = SensorReading.Create(
+        return SensorReading.Create(
             readingId: ReadingId,
             sensorId: SensorId,
             fieldId: FieldId,
@@ -89,12 +89,5 @@ public sealed record TelemetryReceivedMessage
             airTemperatureC: AirTemperature,
             airHumidityPercent: AirHumidity,
             source: source);
-
-        if (!result.IsSuccess)
-        {
-            throw new InvalidOperationException($"Falha ao criar leitura de sensor: {result.Error}");
-        }
-
-        return result.Value!;
     }
 }

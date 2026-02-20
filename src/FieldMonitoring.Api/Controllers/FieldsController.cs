@@ -76,7 +76,7 @@ public class FieldsController : ControllerBase
                 out DateTimeOffset effectiveTo,
                 out string? validationMessage))
         {
-            return BadRequest(validationMessage);
+            return Problem(detail: validationMessage, statusCode: 400, title: "Parâmetro inválido");
         }
 
         IReadOnlyList<ReadingDto> readings = await _fieldHistoryQuery.ExecuteAsync(fieldId, effectiveFrom, effectiveTo, cancellationToken);
@@ -123,7 +123,7 @@ public class FieldsController : ControllerBase
                 out DateTimeOffset? parsedTo,
                 out string? validationMessage))
         {
-            return BadRequest(validationMessage);
+            return Problem(detail: validationMessage, statusCode: 400, title: "Parâmetro inválido");
         }
 
         IReadOnlyList<AlertDto> result = await _alertHistoryQuery.ExecuteByFieldAsync(fieldId, parsedFrom, parsedTo, cancellationToken);

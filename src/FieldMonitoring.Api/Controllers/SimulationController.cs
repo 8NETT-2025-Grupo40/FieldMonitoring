@@ -12,14 +12,10 @@ namespace FieldMonitoring.Api.Controllers;
 public class SimulationController : ControllerBase
 {
     private readonly ProcessTelemetryReadingUseCase _useCase;
-    private readonly InsertMockReadingUseCase _mockUseCase;
 
-    public SimulationController(
-        ProcessTelemetryReadingUseCase useCase,
-        InsertMockReadingUseCase mockUseCase)
+    public SimulationController(ProcessTelemetryReadingUseCase useCase)
     {
         _useCase = useCase;
-        _mockUseCase = mockUseCase;
     }
 
     /// <summary>
@@ -31,7 +27,7 @@ public class SimulationController : ControllerBase
     /// <returns>Resultado do processamento da leitura.</returns>
     [HttpPost("telemetry")]
     [ProducesResponseType(typeof(ProcessingResult), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ProcessingResult), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> SimulateTelemetry(
         [FromBody] TelemetryReceivedMessage message,
         CancellationToken cancellationToken)
@@ -40,29 +36,9 @@ public class SimulationController : ControllerBase
         
         if (!result.IsSuccess)
         {
-             return BadRequest(result);
+            return Problem(detail: result.Message, statusCode: 400, title: "Falha no processamento da leitura");
         }
         
-        return Ok(result);
-    }
-
-    /// <summary>
-    /// Insere uma leitura simulada no InfluxDB para testar conexão.
-    /// </summary>
-    /// <param name="cancellationToken">Token para cancelamento da operação.</param>
-    /// <returns>Resultado da inserção de leitura simulada.</returns>
-    [HttpGet("influx-test")]
-    [ProducesResponseType(typeof(ProcessingResult), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ProcessingResult), StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> TestInfluxConnection(CancellationToken cancellationToken)
-    {
-        ProcessingResult result = await _mockUseCase.ExecuteAsync(cancellationToken);
-
-        if (!result.IsSuccess)
-        {
-            return BadRequest(result);
-        }
-
         return Ok(result);
     }
 }

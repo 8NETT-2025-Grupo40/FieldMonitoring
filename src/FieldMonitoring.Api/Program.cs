@@ -1,3 +1,4 @@
+using FieldMonitoring.Api.ExceptionHandling;
 using FieldMonitoring.Api.Extensions;
 using FieldMonitoring.Application;
 using FieldMonitoring.Application.Serialization;
@@ -9,7 +10,7 @@ WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 builder.Services.AddApplicationServices();
 
 // Adiciona serviços da camada Infrastructure (adapters, EF Core, etc)
-builder.Services.AddInfrastructureServices(builder.Configuration, builder.Environment);
+builder.Services.AddInfrastructureServices(builder.Configuration);
 
 // Adiciona verificações de saúde (liveness/readiness)
 builder.Services.AddApiHealthChecks(builder.Configuration);
@@ -19,6 +20,10 @@ builder.Services.AddSqsMessaging(builder.Configuration);
 
 // Adiciona autenticação e autorização com AWS Cognito
 builder.Services.AddCognitoUserAuthentication(builder.Configuration);
+
+// Adiciona tratamento global de exceções e ProblemDetails
+builder.Services.AddProblemDetails();
+builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 
 // Adiciona serviços de API
 builder.Services.AddControllers()
@@ -31,16 +36,14 @@ builder.Services.AddSwaggerDocumentation();
 
 WebApplication app = builder.Build();
 
-// Configura pipeline HTTP
+// Configura pipeline HTTP (UseExceptionHandler deve ser o primeiro middleware)
+app.UseExceptionHandler();
 app.UseSwaggerDocumentation();
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 app.MapApiHealthEndpoints();
-
-// Log de inicialização
-ILogger<Program> logger = app.Services.GetRequiredService<ILogger<Program>>();
 
 app.Run();
 

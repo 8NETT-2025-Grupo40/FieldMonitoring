@@ -30,12 +30,16 @@ public class GetFarmOverviewQuery
 
         IReadOnlyList<Field> fields = await _fieldRepository.GetByFarmAsync(farmId, cancellationToken);
 
-        List<FieldOverviewDto> fieldOverviews = new List<FieldOverviewDto>();
+        var alertCounts = await _alertStore.CountActiveByFieldsAsync(
+            fields.Select(f => f.FieldId),
+            cancellationToken);
+
         var totalActiveAlerts = 0;
+        List<FieldOverviewDto> fieldOverviews = new List<FieldOverviewDto>();
 
         foreach (Field field in fields)
         {
-            var activeAlertCount = await _alertStore.CountActiveByFieldAsync(field.FieldId, cancellationToken);
+            var activeAlertCount = alertCounts.GetValueOrDefault(field.FieldId, 0);
             totalActiveAlerts += activeAlertCount;
 
             fieldOverviews.Add(FieldSummaryDto.FromField<FieldOverviewDto>(field) with

@@ -18,11 +18,6 @@ public static class FieldMonitoringTelemetry
     public const string SpanProcessTelemetryReading = "telemetry.process";
 
     /// <summary>
-    /// Nome do span para inserção de leitura simulada.
-    /// </summary>
-    public const string SpanInsertMockTelemetryReading = "telemetry.mock.insert";
-
-    /// <summary>
     /// Status de processamento com sucesso.
     /// </summary>
     public const string ProcessingStatusSuccess = "success";

@@ -2,6 +2,7 @@ using System.Diagnostics;
 using FieldMonitoring.Application.Alerts;
 using FieldMonitoring.Application.Fields;
 using FieldMonitoring.Application.Observability;
+using FieldMonitoring.Domain;
 using FieldMonitoring.Domain.Alerts;
 using FieldMonitoring.Domain.Fields;
 using FieldMonitoring.Domain.Rules;
@@ -54,21 +55,20 @@ public class ProcessTelemetryReadingUseCase
 
         try
         {
-            SensorReading reading;
-            try
+            Result<SensorReading> readingResult = message.ToSensorReading();
+            if (!readingResult.IsSuccess)
             {
-                reading = message.ToSensorReading();
-            }
-            catch (InvalidOperationException ex)
-            {
-                _logger.LogWarning(ex,
-                    "Payload inválido para a leitura {ReadingId} do talhão {FieldId}.",
+                _logger.LogWarning(
+                    "Payload inválido para a leitura {ReadingId} do talhão {FieldId}: {Error}",
                     message.ReadingId,
-                    message.FieldId);
+                    message.FieldId,
+                    readingResult.Error);
 
                 FieldMonitoringTelemetry.MarkFailure(activity, "invalid-payload");
-                return ProcessingResult.NonRetryableFailure($"Leitura inválida: {ex.Message}");
+                return ProcessingResult.NonRetryableFailure($"Leitura inválida: {readingResult.Error}");
             }
+
+            SensorReading reading = readingResult.Value!;
 
             if (await _idempotencyStore.ExistsAsync(reading.ReadingId, cancellationToken))
             {

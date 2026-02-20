@@ -4,7 +4,7 @@ using FieldMonitoring.Infrastructure.Messaging;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Options;
 
-namespace FieldMonitoring.Api.HealthChecks;
+namespace FieldMonitoring.Infrastructure.HealthChecks;
 
 internal sealed class SqsReadinessHealthCheck : IHealthCheck
 {
@@ -47,7 +47,7 @@ internal sealed class SqsReadinessHealthCheck : IHealthCheck
         var request = new GetQueueAttributesRequest
         {
             QueueUrl = options.QueueUrl,
-            AttributeNames = new List<string> { "QueueArn" }
+            AttributeNames = ["QueueArn"]
         };
 
         try

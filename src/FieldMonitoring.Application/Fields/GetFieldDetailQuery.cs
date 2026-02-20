@@ -9,10 +9,12 @@ namespace FieldMonitoring.Application.Fields;
 public class GetFieldDetailQuery
 {
     private readonly IFieldRepository _fieldRepository;
+    private readonly IAlertStore _alertStore;
 
-    public GetFieldDetailQuery(IFieldRepository fieldRepository)
+    public GetFieldDetailQuery(IFieldRepository fieldRepository, IAlertStore alertStore)
     {
         _fieldRepository = fieldRepository;
+        _alertStore = alertStore;
     }
 
     /// <summary>
@@ -30,9 +32,12 @@ public class GetFieldDetailQuery
             return null;
         }
 
+        IReadOnlyList<Domain.Alerts.Alert> activeAlerts =
+            await _alertStore.GetActiveByFieldAsync(fieldId, cancellationToken);
+
         return FieldSummaryDto.FromField<FieldDetailDto>(field) with
         {
-            ActiveAlerts = field.Alerts.Select(AlertDto.FromEntity).ToList(),
+            ActiveAlerts = activeAlerts.Select(AlertDto.FromEntity).ToList(),
             UpdatedAt = field.UpdatedAt
         };
     }
