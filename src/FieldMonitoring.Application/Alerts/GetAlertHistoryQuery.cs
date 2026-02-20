@@ -23,6 +23,8 @@ public class GetAlertHistoryQuery
         DateTimeOffset? to = null,
         CancellationToken cancellationToken = default)
     {
+        ArgumentException.ThrowIfNullOrWhiteSpace(farmId);
+
         IReadOnlyList<Alert> alerts = await _alertStore.GetByFarmAsync(farmId, from, to, cancellationToken);
         return alerts.Select(AlertDto.FromEntity).ToList();
     }
@@ -36,6 +38,8 @@ public class GetAlertHistoryQuery
         DateTimeOffset? to = null,
         CancellationToken cancellationToken = default)
     {
+        ArgumentException.ThrowIfNullOrWhiteSpace(fieldId);
+
         IReadOnlyList<Alert> alerts = await _alertStore.GetByFieldAsync(fieldId, from, to, cancellationToken);
         return alerts.Select(AlertDto.FromEntity).ToList();
     }

@@ -1,5 +1,4 @@
 using FieldMonitoring.Application.Telemetry;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace FieldMonitoring.Api.Controllers;
@@ -8,16 +7,19 @@ namespace FieldMonitoring.Api.Controllers;
 /// Controlador exclusivo para simulação e debug.
 /// Permite injetar telemetria via HTTP para facilitar testes manuais sem depender do Worker/SQS.
 /// </summary>
-[AllowAnonymous]
 [ApiController]
 [Route("monitoring/[controller]")]
 public class SimulationController : ControllerBase
 {
     private readonly ProcessTelemetryReadingUseCase _useCase;
+    private readonly InsertMockReadingUseCase _mockUseCase;
 
-    public SimulationController(ProcessTelemetryReadingUseCase useCase)
+    public SimulationController(
+        ProcessTelemetryReadingUseCase useCase,
+        InsertMockReadingUseCase mockUseCase)
     {
         _useCase = useCase;
+        _mockUseCase = mockUseCase;
     }
 
     /// <summary>
@@ -54,7 +56,7 @@ public class SimulationController : ControllerBase
     [ProducesResponseType(typeof(ProcessingResult), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> TestInfluxConnection(CancellationToken cancellationToken)
     {
-        ProcessingResult result = await _useCase.InsertMockReadingAsync(cancellationToken);
+        ProcessingResult result = await _mockUseCase.ExecuteAsync(cancellationToken);
 
         if (!result.IsSuccess)
         {

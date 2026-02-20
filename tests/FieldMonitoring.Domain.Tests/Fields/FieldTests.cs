@@ -75,6 +75,52 @@ public class FieldTests
     }
 
     [Fact]
+    public void ProcessReading_WhenReadingForDifferentFarm_ShouldThrowException()
+    {
+        // Arrange
+        Field field = Field.Create("field-1", "farm-1");
+        SensorReading reading = CreateReading("field-1", soilMoisture: 45.0, farmId: "farm-2");
+        Rule rule = CreateDrynessRule(threshold: 30.0);
+
+        // Act
+        Action act = () => field.ProcessReading(reading, rule);
+
+        // Assert
+        act.Should().Throw<InvalidOperationException>()
+            .WithMessage("*outra fazenda*");
+    }
+
+    [Fact]
+    public void ProcessReading_WhenReadingIsOutOfOrder_ShouldNotRegressOperationalState()
+    {
+        // Arrange
+        Field field = Field.Create("field-1", "farm-1");
+        Rule rule = CreateDrynessRule(threshold: 30.0, windowHours: 24);
+
+        SensorReading reading1 = CreateReading("field-1", soilMoisture: 35.0, timestamp: DateTimeOffset.UtcNow.AddHours(-30));
+        field.ProcessReading(reading1, rule);
+
+        SensorReading reading2 = CreateReading("field-1", soilMoisture: 25.0, timestamp: DateTimeOffset.UtcNow);
+        field.ProcessReading(reading2, rule);
+
+        field.Status.Should().Be(FieldStatusType.DryAlert);
+        field.LastReadingAt.Should().Be(reading2.Timestamp);
+        field.LastSoilMoisture!.Percent.Should().Be(25.0);
+
+        SensorReading outOfOrderReading = CreateReading("field-1", soilMoisture: 45.0, timestamp: DateTimeOffset.UtcNow.AddHours(-10));
+
+        // Act
+        var wasApplied = field.ProcessReading(outOfOrderReading, rule);
+
+        // Assert
+        wasApplied.Should().BeFalse();
+        field.Status.Should().Be(FieldStatusType.DryAlert);
+        field.LastReadingAt.Should().Be(reading2.Timestamp);
+        field.LastSoilMoisture!.Percent.Should().Be(25.0);
+        field.Alerts.Count(a => a.Status == AlertStatus.Active && a.AlertType == AlertType.Dryness).Should().Be(1);
+    }
+
+    [Fact]
     public void ProcessReading_WhenMoistureAboveThreshold_ShouldKeepNormalStatus()
     {
         // Arrange
@@ -317,13 +363,14 @@ public class FieldTests
         double soilTemperature = 25.0,
         double rain = 2.5,
         DateTimeOffset? timestamp = null,
-        string sensorId = "sensor-1")
+        string sensorId = "sensor-1",
+        string farmId = "farm-1")
     {
         Result<SensorReading> result = SensorReading.Create(
             readingId: Guid.NewGuid().ToString(),
             sensorId: sensorId,
             fieldId: fieldId,
-            farmId: "farm-1",
+            farmId: farmId,
             timestamp: timestamp ?? DateTimeOffset.UtcNow,
             soilMoisturePercent: soilMoisture,
             soilTemperatureC: soilTemperature,

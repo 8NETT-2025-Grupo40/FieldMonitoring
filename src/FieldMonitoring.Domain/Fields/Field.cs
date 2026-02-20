@@ -95,11 +95,18 @@ public class Field
     /// <summary>
     /// Processa uma nova leitura de sensor.
     /// Atualiza estado, avalia regras e gerencia alertas.
+    /// Retorna false quando a leitura está fora de ordem temporal e foi ignorada para estado operacional.
     /// </summary>
-    public void ProcessReading(SensorReading reading, IReadOnlyList<Rule> rules)
+    public bool ProcessReading(SensorReading reading, IReadOnlyList<Rule> rules)
     {
         if (reading.FieldId != FieldId)
             throw new InvalidOperationException($"Reading pertence a outro talhão: {reading.FieldId}");
+
+        if (reading.FarmId != FarmId)
+            throw new InvalidOperationException($"Reading pertence a outra fazenda: {reading.FarmId}");
+
+        if (LastReadingAt.HasValue && reading.Timestamp < LastReadingAt.Value)
+            return false;
 
         UpdateLastReadingValues(reading);
 
@@ -116,14 +123,16 @@ public class Field
 
         ApplyContextToProperties(context);
         UpdateStatus();
+
+        return true;
     }
 
     /// <summary>
     /// Sobrecarga para manter compatibilidade com código existente.
     /// </summary>
-    public void ProcessReading(SensorReading reading, Rule drynessRule)
+    public bool ProcessReading(SensorReading reading, Rule drynessRule)
     {
-        ProcessReading(reading, new List<Rule> { drynessRule });
+        return ProcessReading(reading, new List<Rule> { drynessRule });
     }
 
     /// <summary>

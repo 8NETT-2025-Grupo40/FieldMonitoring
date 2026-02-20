@@ -1,7 +1,7 @@
 namespace FieldMonitoring.Domain.Rules;
 
 /// <summary>
-/// Representa uma regra de negócio configurável para avaliação de alertas.
+/// Representa uma regra de negócio para avaliação de alertas.
 /// Permite customizar limiares e janelas de tempo sem alterar código.
 /// </summary>
 public class Rule

@@ -26,6 +26,8 @@ public class GetFarmOverviewQuery
         string farmId,
         CancellationToken cancellationToken = default)
     {
+        ArgumentException.ThrowIfNullOrWhiteSpace(farmId);
+
         IReadOnlyList<Field> fields = await _fieldRepository.GetByFarmAsync(farmId, cancellationToken);
 
         List<FieldOverviewDto> fieldOverviews = new List<FieldOverviewDto>();
@@ -36,19 +38,8 @@ public class GetFarmOverviewQuery
             var activeAlertCount = await _alertStore.CountActiveByFieldAsync(field.FieldId, cancellationToken);
             totalActiveAlerts += activeAlertCount;
 
-            fieldOverviews.Add(new FieldOverviewDto
+            fieldOverviews.Add(FieldSummaryDto.FromField<FieldOverviewDto>(field) with
             {
-                FieldId = field.FieldId,
-                FarmId = field.FarmId,
-                SensorId = field.SensorId,
-                Status = field.Status,
-                StatusReason = field.StatusReason,
-                LastReadingAt = field.LastReadingAt,
-                LastSoilHumidity = field.LastSoilMoisture?.Percent,
-                LastSoilTemperature = field.LastSoilTemperature?.Celsius,
-                LastAirTemperature = field.LastAirTemperature?.Celsius,
-                LastAirHumidity = field.LastAirHumidity?.Percent,
-                LastRainMm = field.LastRain?.Millimeters,
                 ActiveAlertCount = activeAlertCount
             });
         }

@@ -1,7 +1,6 @@
-using FieldMonitoring.Application.Alerts;
 using FieldMonitoring.Domain.Alerts;
 
-namespace FieldMonitoring.Application.Telemetry;
+namespace FieldMonitoring.Application.Alerts;
 
 /// <summary>
 /// Responsável por construir eventos de alerta a partir de mudanças de status.

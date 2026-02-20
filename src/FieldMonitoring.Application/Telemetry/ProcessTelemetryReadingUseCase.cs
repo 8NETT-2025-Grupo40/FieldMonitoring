@@ -20,6 +20,7 @@ public class ProcessTelemetryReadingUseCase
     private readonly ITimeSeriesReadingsStore _timeSeriesStore;
     private readonly IAlertEventsStore _alertEventsStore;
     private readonly IFieldRepository _fieldRepository;
+    private readonly IRuleSetProvider _ruleSetProvider;
     private readonly ILogger<ProcessTelemetryReadingUseCase> _logger;
 
     public ProcessTelemetryReadingUseCase(
@@ -27,12 +28,14 @@ public class ProcessTelemetryReadingUseCase
         ITimeSeriesReadingsStore timeSeriesStore,
         IAlertEventsStore alertEventsStore,
         IFieldRepository fieldRepository,
+        IRuleSetProvider ruleSetProvider,
         ILogger<ProcessTelemetryReadingUseCase> logger)
     {
         _idempotencyStore = idempotencyStore;
         _timeSeriesStore = timeSeriesStore;
         _alertEventsStore = alertEventsStore;
         _fieldRepository = fieldRepository;
+        _ruleSetProvider = ruleSetProvider;
         _logger = logger;
     }
 
@@ -80,28 +83,42 @@ public class ProcessTelemetryReadingUseCase
 
             var alertStatusBefore = AlertEventBuilder.CaptureStatuses(field.Alerts);
 
-            List<Rule> rules = new()
+            IReadOnlyList<Rule> rules = _ruleSetProvider.GetRules();
+
+            ProcessedReading processedReading = new()
             {
-                Rule.CreateDefaultDrynessRule(),
-                Rule.CreateDefaultExtremeHeatRule(),
-                Rule.CreateDefaultFrostRule(),
-                Rule.CreateDefaultDryAirRule(),
-                Rule.CreateDefaultHumidAirRule()
+                ReadingId = reading.ReadingId,
+                FieldId = reading.FieldId,
+                ProcessedAt = DateTimeOffset.UtcNow,
+                Source = reading.Source
             };
 
-            field.ProcessReading(reading, rules);
+            bool readingApplied;
+            try
+            {
+                readingApplied = field.ProcessReading(reading, rules);
+            }
+            catch (InvalidOperationException ex)
+            {
+                _logger.LogWarning(ex,
+                    "Leitura {ReadingId} rejeitada por invariante de domínio no talhão {FieldId}.",
+                    message.ReadingId,
+                    message.FieldId);
+
+                FieldMonitoringTelemetry.MarkFailure(activity, "domain-invariant-violation");
+                return ProcessingResult.NonRetryableFailure($"Leitura rejeitada por invariante de domínio: {ex.Message}");
+            }
+
+            if (!readingApplied)
+            {
+                await _idempotencyStore.MarkProcessedAsync(processedReading, cancellationToken);
+                FieldMonitoringTelemetry.MarkSuccess(activity, skipped: true);
+                return ProcessingResult.Skipped("Leitura fora de ordem temporal: histórico persistido sem alterar estado operacional.");
+            }
 
             await _fieldRepository.SaveAsync(field, cancellationToken);
 
-            await _idempotencyStore.MarkProcessedAsync(
-                new ProcessedReading
-                {
-                    ReadingId = reading.ReadingId,
-                    FieldId = reading.FieldId,
-                    ProcessedAt = DateTimeOffset.UtcNow,
-                    Source = reading.Source
-                },
-                cancellationToken);
+            await _idempotencyStore.MarkProcessedAsync(processedReading, cancellationToken);
 
             var alertEvents = AlertEventBuilder.BuildEvents(alertStatusBefore, field.Alerts);
             await PublishAlertEventsAsync(alertEvents, cancellationToken);
@@ -120,53 +137,6 @@ public class ProcessTelemetryReadingUseCase
             FieldMonitoringTelemetry.RecordException(activity, ex);
 
             return ProcessingResult.RetryableFailure("Falha transitória durante o processamento da leitura.");
-        }
-    }
-
-    /// <summary>
-    /// Insere uma leitura simulada no InfluxDB para testar conexão.
-    /// Não executa idempotência, regras ou persistência em SQL.
-    /// </summary>
-    public async Task<ProcessingResult> InsertMockReadingAsync(
-        CancellationToken cancellationToken = default)
-    {
-        using Activity? activity = FieldMonitoringTelemetry.StartActivity(
-            FieldMonitoringTelemetry.SpanInsertMockTelemetryReading,
-            ActivityKind.Internal);
-
-        try
-        {
-            string readingId = $"mock-{Guid.NewGuid():N}";
-            Result<SensorReading> readingResult = SensorReading.Create(
-                readingId: readingId,
-                sensorId: "sensor-mock-001",
-                fieldId: "field-mock-001",
-                farmId: "farm-mock-001",
-                timestamp: DateTimeOffset.UtcNow,
-                soilMoisturePercent: 42.5,
-                soilTemperatureC: 23.4,
-                rainMm: 0.2,
-                airTemperatureC: 26.1,
-                airHumidityPercent: 55.0,
-                source: ReadingSource.Http);
-
-            if (!readingResult.IsSuccess)
-            {
-                _logger.LogWarning("Falha ao criar leitura simulada: {Error}", readingResult.Error);
-                FieldMonitoringTelemetry.MarkFailure(activity, "invalid-mock-reading");
-                return ProcessingResult.NonRetryableFailure($"Leitura simulada inválida: {readingResult.Error}");
-            }
-
-            await _timeSeriesStore.AppendAsync(readingResult.Value!, cancellationToken);
-            FieldMonitoringTelemetry.MarkSuccess(activity);
-            return ProcessingResult.Success($"Leitura simulada inserida: {readingId}");
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Falha ao inserir leitura simulada no InfluxDB.");
-            FieldMonitoringTelemetry.MarkFailure(activity, ex.Message);
-            FieldMonitoringTelemetry.RecordException(activity, ex);
-            return ProcessingResult.NonRetryableFailure("Falha ao inserir leitura simulada no InfluxDB.");
         }
     }
 

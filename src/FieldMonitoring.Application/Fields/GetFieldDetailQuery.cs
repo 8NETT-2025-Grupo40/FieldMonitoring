@@ -1,5 +1,4 @@
 using FieldMonitoring.Application.Alerts;
-using FieldMonitoring.Domain.Alerts;
 using FieldMonitoring.Domain.Fields;
 
 namespace FieldMonitoring.Application.Fields;
@@ -23,25 +22,16 @@ public class GetFieldDetailQuery
         string fieldId,
         CancellationToken cancellationToken = default)
     {
+        ArgumentException.ThrowIfNullOrWhiteSpace(fieldId);
+
         Field? field = await _fieldRepository.GetByIdAsync(fieldId, cancellationToken);
         if (field == null)
         {
             return null;
         }
 
-        return new FieldDetailDto
+        return FieldSummaryDto.FromField<FieldDetailDto>(field) with
         {
-            FieldId = field.FieldId,
-            FarmId = field.FarmId,
-            SensorId = field.SensorId,
-            Status = field.Status,
-            StatusReason = field.StatusReason,
-            LastReadingAt = field.LastReadingAt,
-            LastSoilHumidity = field.LastSoilMoisture?.Percent,
-            LastSoilTemperature = field.LastSoilTemperature?.Celsius,
-            LastAirTemperature = field.LastAirTemperature?.Celsius,
-            LastAirHumidity = field.LastAirHumidity?.Percent,
-            LastRainMm = field.LastRain?.Millimeters,
             ActiveAlerts = field.Alerts.Select(AlertDto.FromEntity).ToList(),
             UpdatedAt = field.UpdatedAt
         };

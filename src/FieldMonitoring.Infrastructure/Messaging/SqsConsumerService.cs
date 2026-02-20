@@ -109,11 +109,9 @@ public class SqsConsumerService : BackgroundService
 	/// </summary>
 	private async Task ProcessSingleMessageAsync(Message message, CancellationToken stoppingToken)
 	{
-		using Activity? activity = FieldMonitoringTelemetry.StartActivity(
-			FieldMonitoringTelemetry.SpanSqsConsumeTelemetryMessage,
-			ActivityKind.Consumer);
+		using Activity? activity = SqsMessagingTelemetry.StartConsumerActivity();
 
-		FieldMonitoringTelemetry.SetSqsContext(activity, _options.QueueUrl, message.MessageId);
+		SqsMessagingTelemetry.SetSqsContext(activity, _options.QueueUrl, message.MessageId);
 
 		try
 		{

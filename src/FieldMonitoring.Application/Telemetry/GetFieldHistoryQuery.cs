@@ -23,6 +23,8 @@ public class GetFieldHistoryQuery
         DateTimeOffset to,
         CancellationToken cancellationToken = default)
     {
+        ArgumentException.ThrowIfNullOrWhiteSpace(fieldId);
+
         IReadOnlyList<SensorReading> readings = await _timeSeriesStore.GetByPeriodAsync(fieldId, from, to, cancellationToken);
         return readings.Select(ReadingDto.FromSensorReading).ToList();
     }
