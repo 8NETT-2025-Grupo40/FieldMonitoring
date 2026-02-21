@@ -103,7 +103,7 @@ public class TelemetryIntegrationTests : IClassFixture<IntegrationTestFixture>
             var result2 = await useCase.ExecuteAsync(message);
 
             // Assert - Segunda execução deve ser ignorada (idempotente)
-            result2.ToString().Should().Contain("Skipped");
+            result2.WasSkipped.Should().BeTrue();
         }
     }
 
@@ -139,6 +139,56 @@ public class TelemetryIntegrationTests : IClassFixture<IntegrationTestFixture>
         readings.Should().NotBeNull();
         readings!.Should().HaveCount(2);
         readings.Select(r => r.SoilHumidity).Should().ContainInOrder(35.0, 40.0);
+    }
+
+    [Fact]
+    public async Task Should_PersistOutOfOrderReadingInHistory_WithoutChangingFieldOperationalState()
+    {
+        // Arrange
+        var now = DateTimeOffset.UtcNow;
+        var newerMessage = new TelemetryMessageBuilder()
+            .WithReadingId($"newer-{Guid.NewGuid():N}")
+            .ForField("field-oo-1", "farm-1")
+            .WithSoilMoisture(55.0)
+            .WithTimestamp(now)
+            .Build();
+
+        var outOfOrderMessage = new TelemetryMessageBuilder()
+            .WithReadingId($"older-{Guid.NewGuid():N}")
+            .ForField("field-oo-1", "farm-1")
+            .WithSoilMoisture(15.0)
+            .WithTimestamp(now.AddHours(-2))
+            .Build();
+
+        ProcessingResult outOfOrderResult;
+        using (var scope = _fixture.Services.CreateScope())
+        {
+            var useCase = scope.ServiceProvider.GetRequiredService<ProcessTelemetryReadingUseCase>();
+            await useCase.ExecuteAsync(newerMessage);
+            outOfOrderResult = await useCase.ExecuteAsync(outOfOrderMessage);
+        }
+
+        // Assert - leitura fora de ordem é persistida no histórico, mas não altera estado operacional
+        outOfOrderResult.IsSuccess.Should().BeTrue();
+        outOfOrderResult.WasSkipped.Should().BeTrue();
+
+        var fieldResponse = await _client.GetAsync("/monitoring/fields/field-oo-1");
+        fieldResponse.EnsureSuccessStatusCode();
+
+        var field = await fieldResponse.Content.ReadFromJsonAsync<Application.Fields.FieldDetailDto>();
+        field.Should().NotBeNull();
+        field!.LastSoilHumidity.Should().Be(55.0);
+        field.LastReadingAt.Should().Be(newerMessage.Timestamp);
+
+        var from = now.AddHours(-3);
+        var to = now.AddHours(1);
+        var historyResponse = await _client.GetAsync($"/monitoring/fields/field-oo-1/history?from={from:O}&to={to:O}");
+        historyResponse.EnsureSuccessStatusCode();
+
+        var readings = await historyResponse.Content.ReadFromJsonAsync<List<ReadingDto>>();
+        readings.Should().NotBeNull();
+        readings!.Should().HaveCount(2);
+        readings.Select(r => r.SoilHumidity).Should().ContainInOrder(15.0, 55.0);
     }
 
 }

@@ -18,215 +18,215 @@ namespace FieldMonitoring.Infrastructure.Messaging;
 /// </summary>
 public class SqsConsumerService : BackgroundService
 {
-	private static readonly JsonSerializerOptions SerializerOptions = new()
-	{
-		PropertyNameCaseInsensitive = true,
-		Converters =
-		{
-			new StrictDateTimeOffsetJsonConverter()
-		}
-	};
-	private readonly IServiceScopeFactory _scopeFactory;
-	private readonly IAmazonSQS _sqsClient;
-	private readonly SqsOptions _options;
-	private readonly ILogger<SqsConsumerService> _logger;
+    private static readonly TimeSpan RetryDelay = TimeSpan.FromSeconds(5);
 
-	public SqsConsumerService(
-		IServiceScopeFactory scopeFactory,
-		IAmazonSQS sqsClient,
-		IOptions<SqsOptions> options,
-		ILogger<SqsConsumerService> logger)
-	{
-		_scopeFactory = scopeFactory;
-		_sqsClient = sqsClient;
-		_options = options.Value;
-		_logger = logger;
-	}
+    private static readonly JsonSerializerOptions SerializerOptions = new()
+    {
+        PropertyNameCaseInsensitive = true,
+        Converters =
+        {
+            new StrictDateTimeOffsetJsonConverter()
+        }
+    };
+    private readonly IServiceScopeFactory _scopeFactory;
+    private readonly IAmazonSQS _sqsClient;
+    private readonly SqsOptions _options;
+    private readonly ILogger<SqsConsumerService> _logger;
 
-	protected override async Task ExecuteAsync(CancellationToken stoppingToken)
-	{
-		if (!_options.Enabled)
-		{
-			_logger.LogInformation("Consumidor SQS desabilitado.");
-			return;
-		}
+    public SqsConsumerService(
+        IServiceScopeFactory scopeFactory,
+        IAmazonSQS sqsClient,
+        IOptions<SqsOptions> options,
+        ILogger<SqsConsumerService> logger)
+    {
+        _scopeFactory = scopeFactory;
+        _sqsClient = sqsClient;
+        _options = options.Value;
+        _logger = logger;
+    }
 
-		if (string.IsNullOrEmpty(_options.QueueUrl))
-		{
-			_logger.LogWarning("URL da fila SQS não configurada. O consumidor não será iniciado.");
-			return;
-		}
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    {
+        if (!_options.Enabled)
+        {
+            _logger.LogInformation("Consumidor SQS desabilitado.");
+            return;
+        }
 
-		_logger.LogInformation("Consumidor SQS iniciando. Fila: {QueueUrl}", _options.QueueUrl);
+        if (string.IsNullOrEmpty(_options.QueueUrl))
+        {
+            _logger.LogWarning("URL da fila SQS não configurada. O consumidor não será iniciado.");
+            return;
+        }
 
-		while (!stoppingToken.IsCancellationRequested)
-		{
-			try
-			{
-				await ProcessMessagesAsync(stoppingToken);
-			}
-			catch (Exception ex)
-			{
-				_logger.LogError(ex, "Erro ao processar mensagens SQS. Nova tentativa em 5 segundos...");
-				await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);
-			}
-		}
-	}
+        _logger.LogInformation("Consumidor SQS iniciando. Fila: {QueueUrl}", _options.QueueUrl);
 
-	/// <summary>
-	/// Busca e processa lote de mensagens da fila SQS.
-	/// </summary>
-	private async Task ProcessMessagesAsync(CancellationToken stoppingToken)
-	{
-		ReceiveMessageRequest request = new ReceiveMessageRequest
-		{
-			QueueUrl = _options.QueueUrl,
-			MaxNumberOfMessages = _options.MaxNumberOfMessages,
-			WaitTimeSeconds = _options.WaitTimeSeconds,
-			VisibilityTimeout = _options.VisibilityTimeout
-		};
+        while (!stoppingToken.IsCancellationRequested)
+        {
+            try
+            {
+                await ProcessMessagesAsync(stoppingToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Erro ao processar mensagens SQS. Nova tentativa em {Delay}...", RetryDelay);
+                await Task.Delay(RetryDelay, stoppingToken);
+            }
+        }
+    }
 
-		ReceiveMessageResponse response = await _sqsClient.ReceiveMessageAsync(request, stoppingToken);
+    /// <summary>
+    /// Busca e processa lote de mensagens da fila SQS.
+    /// </summary>
+    private async Task ProcessMessagesAsync(CancellationToken stoppingToken)
+    {
+        ReceiveMessageRequest request = new ReceiveMessageRequest
+        {
+            QueueUrl = _options.QueueUrl,
+            MaxNumberOfMessages = _options.MaxNumberOfMessages,
+            WaitTimeSeconds = _options.WaitTimeSeconds,
+            VisibilityTimeout = _options.VisibilityTimeout
+        };
 
-		if (response.Messages is null or { Count: 0 })
-		{
-			return;
-		}
+        ReceiveMessageResponse response = await _sqsClient.ReceiveMessageAsync(request, stoppingToken);
 
-		_logger.LogDebug("Recebidas {Count} mensagens do SQS", response.Messages.Count);
+        if (response.Messages is null or { Count: 0 })
+        {
+            return;
+        }
 
-		foreach (Message? message in response.Messages)
-		{
-			await ProcessSingleMessageAsync(message, stoppingToken);
-		}
-	}
+        _logger.LogDebug("Recebidas {Count} mensagens do SQS", response.Messages.Count);
 
-	/// <summary>
-	/// Processa uma única mensagem de telemetria.
-	/// Em caso de sucesso, deleta a mensagem da fila.
-	/// Em caso de falha não recuperável, deleta a mensagem para evitar loop infinito.
-	/// Em caso de falha recuperável, mantém a mensagem para nova tentativa.
-	/// </summary>
-	private async Task ProcessSingleMessageAsync(Message message, CancellationToken stoppingToken)
-	{
-		using Activity? activity = FieldMonitoringTelemetry.StartActivity(
-			FieldMonitoringTelemetry.SpanSqsConsumeTelemetryMessage,
-			ActivityKind.Consumer);
+        foreach (Message? message in response.Messages)
+        {
+            await ProcessSingleMessageAsync(message, stoppingToken);
+        }
+    }
 
-		FieldMonitoringTelemetry.SetSqsContext(activity, _options.QueueUrl, message.MessageId);
+    /// <summary>
+    /// Processa uma única mensagem de telemetria.
+    /// Em caso de sucesso, deleta a mensagem da fila.
+    /// Em caso de falha não recuperável, deleta a mensagem para evitar loop infinito.
+    /// Em caso de falha recuperável, mantém a mensagem para nova tentativa.
+    /// </summary>
+    private async Task ProcessSingleMessageAsync(Message message, CancellationToken stoppingToken)
+    {
+        using Activity? activity = SqsMessagingTelemetry.StartConsumerActivity();
 
-		try
-		{
-			TelemetryReceivedMessage? telemetryMessage = DeserializeMessage(message.Body);
-			if (telemetryMessage == null)
-			{
-				FieldMonitoringTelemetry.MarkFailure(activity, "invalid-message");
+        SqsMessagingTelemetry.SetSqsContext(activity, _options.QueueUrl, message.MessageId);
 
-				_logger.LogWarning("Falha ao desserializar mensagem: {MessageId}", message.MessageId);
-				// Deleta mensagem malformada para evitar reprocessamento infinito
-				await DeleteMessageAsync(message, stoppingToken);
-				return;
-			}
+        try
+        {
+            TelemetryReceivedMessage? telemetryMessage = DeserializeMessage(message.Body);
+            if (telemetryMessage == null)
+            {
+                FieldMonitoringTelemetry.MarkFailure(activity, "invalid-message");
 
-			FieldMonitoringTelemetry.SetReadingContext(activity, telemetryMessage.FieldId, telemetryMessage.FarmId, telemetryMessage.Source);
+                _logger.LogWarning("Falha ao desserializar mensagem: {MessageId}", message.MessageId);
+                // Deleta mensagem malformada para evitar reprocessamento infinito
+                await DeleteMessageAsync(message, stoppingToken);
+                return;
+            }
 
-			using IServiceScope scope = _scopeFactory.CreateScope();
-			ProcessTelemetryReadingUseCase useCase = scope.ServiceProvider.GetRequiredService<ProcessTelemetryReadingUseCase>();
+            FieldMonitoringTelemetry.SetReadingContext(activity, telemetryMessage.FieldId, telemetryMessage.FarmId, telemetryMessage.Source);
 
-			ProcessingResult result = await useCase.ExecuteAsync(telemetryMessage, stoppingToken);
+            using IServiceScope scope = _scopeFactory.CreateScope();
+            ProcessTelemetryReadingUseCase useCase = scope.ServiceProvider.GetRequiredService<ProcessTelemetryReadingUseCase>();
 
-			if (result.IsSuccess)
-			{
-				FieldMonitoringTelemetry.MarkSuccess(activity, skipped: result.WasSkipped);
+            ProcessingResult result = await useCase.ExecuteAsync(telemetryMessage, stoppingToken);
 
-				_logger.LogDebug(
-					"Leitura {ReadingId} processada: {Message}",
-					telemetryMessage.ReadingId,
-					result.WasSkipped ? "Ignorada (duplicada)" : "Sucesso");
+            if (result.IsSuccess)
+            {
+                FieldMonitoringTelemetry.MarkSuccess(activity, skipped: result.WasSkipped);
 
-				await DeleteMessageAsync(message, stoppingToken);
-			}
-			else
-			{
-				FieldMonitoringTelemetry.MarkFailure(activity, result.Message ?? "processing-failed");
+                _logger.LogDebug(
+                    "Leitura {ReadingId} processada: {Message}",
+                    telemetryMessage.ReadingId,
+                    result.WasSkipped ? "Ignorada (duplicada)" : "Sucesso");
 
-				if (!result.ShouldRetry)
-				{
-					_logger.LogWarning(
-						"Falha não recuperável ao processar leitura {ReadingId}: {Reason}. A mensagem será removida da fila.",
-						telemetryMessage.ReadingId,
-						result.Message);
+                await DeleteMessageAsync(message, stoppingToken);
+            }
+            else
+            {
+                FieldMonitoringTelemetry.MarkFailure(activity, result.Message ?? "processing-failed");
 
-					await DeleteMessageAsync(message, stoppingToken);
-					return;
-				}
+                if (!result.ShouldRetry)
+                {
+                    _logger.LogWarning(
+                        "Falha não recuperável ao processar leitura {ReadingId}: {Reason}. A mensagem será removida da fila.",
+                        telemetryMessage.ReadingId,
+                        result.Message);
 
-				_logger.LogWarning(
-					"Falha ao processar leitura {ReadingId}: {Reason}. A mensagem permanecerá na fila para nova tentativa.",
-					telemetryMessage.ReadingId,
-					result.Message);
+                    await DeleteMessageAsync(message, stoppingToken);
+                    return;
+                }
 
-				// Não deleta - mantém a mensagem para nova tentativa via visibility timeout.
-			}
-		}
-		catch (Exception ex)
-		{
-			FieldMonitoringTelemetry.MarkFailure(activity, ex.Message);
-			FieldMonitoringTelemetry.RecordException(activity, ex);
+                _logger.LogWarning(
+                    "Falha ao processar leitura {ReadingId}: {Reason}. A mensagem permanecerá na fila para nova tentativa.",
+                    telemetryMessage.ReadingId,
+                    result.Message);
 
-			_logger.LogError(ex, "Erro ao processar mensagem {MessageId}", message.MessageId);
-			// Não deleta - mantém a mensagem para nova tentativa via visibility timeout.
-		}
-	}
+                // Não deleta - mantém a mensagem para nova tentativa via visibility timeout.
+            }
+        }
+        catch (Exception ex)
+        {
+            FieldMonitoringTelemetry.MarkFailure(activity, ex.Message);
+            FieldMonitoringTelemetry.RecordException(activity, ex);
 
-	/// <summary>
-	/// Deserializa o corpo da mensagem SQS para TelemetryReceivedMessage.
-	/// Trata caso especial onde a mensagem vem encapsulada por SNS.
-	/// </summary>
-	private TelemetryReceivedMessage? DeserializeMessage(string body)
-	{
-		try
-		{
-			// Trata wrapper SNS se a mensagem vier de um tópico SNS
-			if (body.Contains("\"Message\"") && body.Contains("\"TopicArn\""))
-			{
-				SnsMessageWrapper? snsWrapper = JsonSerializer.Deserialize<SnsMessageWrapper>(body);
-				if (snsWrapper?.Message != null)
-				{
-					body = snsWrapper.Message;
-				}
-			}
+            _logger.LogError(ex, "Erro ao processar mensagem {MessageId}", message.MessageId);
+            // Não deleta - mantém a mensagem para nova tentativa via visibility timeout.
+        }
+    }
 
-			return JsonSerializer.Deserialize<TelemetryReceivedMessage>(body, SerializerOptions);
-		}
-		catch (JsonException ex)
-		{
-			_logger.LogError(ex, "Falha ao desserializar o corpo da mensagem.");
-			return null;
-		}
-	}
+    /// <summary>
+    /// Deserializa o corpo da mensagem SQS para TelemetryReceivedMessage.
+    /// Trata caso especial onde a mensagem vem encapsulada por SNS.
+    /// </summary>
+    private TelemetryReceivedMessage? DeserializeMessage(string body)
+    {
+        try
+        {
+            // Trata wrapper SNS se a mensagem vier de um tópico SNS
+            if (body.Contains("\"Message\"") && body.Contains("\"TopicArn\""))
+            {
+                SnsMessageWrapper? snsWrapper = JsonSerializer.Deserialize<SnsMessageWrapper>(body);
+                if (snsWrapper?.Message != null)
+                {
+                    body = snsWrapper.Message;
+                }
+            }
 
-	/// <summary>
-	/// Remove a mensagem da fila SQS após processamento bem-sucedido.
-	/// </summary>
-	private async Task DeleteMessageAsync(Message message, CancellationToken stoppingToken)
-	{
-		try
-		{
-			await _sqsClient.DeleteMessageAsync(_options.QueueUrl, message.ReceiptHandle, stoppingToken);
-		}
-		catch (Exception ex)
-		{
-			_logger.LogError(ex, "Falha ao deletar mensagem {MessageId}", message.MessageId);
-		}
-	}
+            return JsonSerializer.Deserialize<TelemetryReceivedMessage>(body, SerializerOptions);
+        }
+        catch (JsonException ex)
+        {
+            _logger.LogError(ex, "Falha ao desserializar o corpo da mensagem.");
+            return null;
+        }
+    }
 
-	/// <summary>
-	/// Wrapper para mensagens SNS quando a fila SQS está inscrita em um tópico SNS.
-	/// </summary>
-	private class SnsMessageWrapper
-	{
-		public string? Message { get; set; }
-		public string? TopicArn { get; set; }
-	}
+    /// <summary>
+    /// Remove a mensagem da fila SQS após processamento bem-sucedido.
+    /// </summary>
+    private async Task DeleteMessageAsync(Message message, CancellationToken stoppingToken)
+    {
+        try
+        {
+            await _sqsClient.DeleteMessageAsync(_options.QueueUrl, message.ReceiptHandle, stoppingToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Falha ao deletar mensagem {MessageId}", message.MessageId);
+        }
+    }
+
+    /// <summary>
+    /// Wrapper para mensagens SNS quando a fila SQS está inscrita em um tópico SNS.
+    /// </summary>
+    private class SnsMessageWrapper
+    {
+        public string? Message { get; set; }
+        public string? TopicArn { get; set; }
+    }
 }

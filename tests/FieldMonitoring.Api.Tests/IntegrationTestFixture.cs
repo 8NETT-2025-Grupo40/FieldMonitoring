@@ -52,11 +52,13 @@ public class IntegrationTestFixture : TestWebApplicationFactory
     }
 
     /// <summary>
-    /// Obtém uma instância do DbContext para verificações nos testes.
+    /// Cria um scope e retorna o DbContext para verificações nos testes.
+    /// O scope retornado deve ser descartado pelo chamador via <c>using</c>.
     /// </summary>
-    public FieldMonitoringDbContext GetDbContext()
+    public (IServiceScope Scope, FieldMonitoringDbContext DbContext) CreateScopedDbContext()
     {
         var scope = Services.CreateScope();
-        return scope.ServiceProvider.GetRequiredService<FieldMonitoringDbContext>();
+        var dbContext = scope.ServiceProvider.GetRequiredService<FieldMonitoringDbContext>();
+        return (scope, dbContext);
     }
 }

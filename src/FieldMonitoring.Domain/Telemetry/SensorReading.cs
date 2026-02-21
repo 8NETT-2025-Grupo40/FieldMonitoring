@@ -1,73 +1,47 @@
 namespace FieldMonitoring.Domain.Telemetry;
 
 /// <summary>
-/// Representa uma leitura de sensor recebida via telemetria.
-/// Value object imutável contendo todos os dados da leitura.
+/// Leitura de sensor recebida via telemetria (imutavel).
 /// </summary>
 public sealed record SensorReading
 {
-    /// <summary>
-    /// Identificador único para controle de idempotência.
-    /// Garante que a mesma leitura não seja processada duas vezes.
-    /// </summary>
-    public required string ReadingId { get; init; }
+    private SensorReading() { }
+
+    public string ReadingId { get; init; } = null!;
+    public string SensorId { get; init; } = null!;
+    public string FieldId { get; init; } = null!;
+    public string FarmId { get; init; } = null!;
+    public DateTimeOffset Timestamp { get; init; }
 
     /// <summary>
-    /// Identificador do sensor que gerou a leitura.
+    /// Umidade do solo (obrigatório).
     /// </summary>
-    public required string SensorId { get; init; }
+    public SoilMoisture SoilMoisture { get; init; } = null!;
 
     /// <summary>
-    /// Identificador do talhão onde a leitura foi coletada.
+    /// Temperatura do solo (obrigatório).
     /// </summary>
-    public required string FieldId { get; init; }
+    public Temperature SoilTemperature { get; init; } = null!;
 
     /// <summary>
-    /// Identificador da fazenda à qual o talhão pertence.
-    /// </summary>
-    public required string FarmId { get; init; }
-
-    /// <summary>
-    /// Timestamp de quando a medição foi feita (hora do sensor, não de chegada).
-    /// </summary>
-    public required DateTimeOffset Timestamp { get; init; }
-
-    /// <summary>
-    /// Umidade do solo (Value Object com validação 0-100%).
-    /// Valor principal para avaliação da regra de seca.
-    /// </summary>
-    public required SoilMoisture SoilMoisture { get; init; }
-
-    /// <summary>
-    /// Temperatura do solo em graus Celsius (Value Object com validação -50 a 60°C).
-    /// </summary>
-    public required Temperature SoilTemperature { get; init; }
-
-    /// <summary>
-    /// Temperatura do ar em graus Celsius (Value Object com validação -50 a 60°C).
-    /// Opcional - nem todos os sensores possuem este dado.
+    /// Temperatura do ar (opcional - nem todos os sensores possuem).
     /// </summary>
     public Temperature? AirTemperature { get; init; }
 
     /// <summary>
-    /// Umidade do ar em porcentagem (Value Object com validação 0-100%).
-    /// Opcional - nem todos os sensores possuem este dado.
+    /// Umidade do ar (opcional - nem todos os sensores possuem).
     /// </summary>
     public AirHumidity? AirHumidity { get; init; }
 
     /// <summary>
-    /// Precipitação em milímetros (Value Object com validação >= 0).
+    /// Volume de chuva (obrigatório).
     /// </summary>
-    public required RainMeasurement Rain { get; init; }
+    public RainMeasurement Rain { get; init; } = null!;
 
-    /// <summary>
-    /// Origem da leitura (HTTP ou MQTT).
-    /// </summary>
     public ReadingSource Source { get; init; } = ReadingSource.Http;
 
     /// <summary>
-    /// Cria uma SensorReading a partir de valores primitivos.
-    /// Valida cada métrica e retorna Result com sucesso ou erro.
+    /// Cria uma SensorReading a partir de valores primitivos, validando cada metrica.
     /// </summary>
     public static Result<SensorReading> Create(
         string readingId,
@@ -82,7 +56,6 @@ public sealed record SensorReading
         double? airHumidityPercent = null,
         ReadingSource source = ReadingSource.Http)
     {
-        // Validações de campos obrigatórios
         if (string.IsNullOrWhiteSpace(readingId))
             return Result<SensorReading>.Failure("ReadingId é obrigatório");
 
@@ -95,7 +68,6 @@ public sealed record SensorReading
         if (string.IsNullOrWhiteSpace(farmId))
             return Result<SensorReading>.Failure("FarmId é obrigatório");
 
-        // Validações de métricas usando Value Objects
         Result<SoilMoisture> soilMoistureResult = SoilMoisture.FromPercent(soilMoisturePercent);
         if (!soilMoistureResult.IsSuccess)
             return Result<SensorReading>.Failure(soilMoistureResult.Error!);
@@ -108,7 +80,6 @@ public sealed record SensorReading
         if (!rainResult.IsSuccess)
             return Result<SensorReading>.Failure(rainResult.Error!);
 
-        // Validações de métricas opcionais
         Temperature? airTemperature = null;
         if (airTemperatureC.HasValue)
         {
@@ -127,7 +98,6 @@ public sealed record SensorReading
             airHumidity = airHumidityResult.Value;
         }
 
-        // Cria a leitura com Value Objects validados
         SensorReading reading = new SensorReading
         {
             ReadingId = readingId,
@@ -144,39 +114,5 @@ public sealed record SensorReading
         };
 
         return Result<SensorReading>.Success(reading);
-    }
-
-    /// <summary>
-    /// Valida os campos obrigatórios da leitura.
-    /// Validações de métricas já são feitas na criação via Value Objects.
-    /// </summary>
-    public bool IsValid(out string? errorMessage)
-    {
-        if (string.IsNullOrWhiteSpace(ReadingId))
-        {
-            errorMessage = "ReadingId é obrigatório";
-            return false;
-        }
-
-        if (string.IsNullOrWhiteSpace(SensorId))
-        {
-            errorMessage = "SensorId é obrigatório";
-            return false;
-        }
-
-        if (string.IsNullOrWhiteSpace(FieldId))
-        {
-            errorMessage = "FieldId é obrigatório";
-            return false;
-        }
-
-        if (string.IsNullOrWhiteSpace(FarmId))
-        {
-            errorMessage = "FarmId é obrigatório";
-            return false;
-        }
-
-        errorMessage = null;
-        return true;
     }
 }

@@ -1,5 +1,4 @@
 using FieldMonitoring.Application.Telemetry;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace FieldMonitoring.Api.Controllers;
@@ -8,7 +7,6 @@ namespace FieldMonitoring.Api.Controllers;
 /// Controlador exclusivo para simulação e debug.
 /// Permite injetar telemetria via HTTP para facilitar testes manuais sem depender do Worker/SQS.
 /// </summary>
-[AllowAnonymous]
 [ApiController]
 [Route("monitoring/[controller]")]
 public class SimulationController : ControllerBase
@@ -29,7 +27,7 @@ public class SimulationController : ControllerBase
     /// <returns>Resultado do processamento da leitura.</returns>
     [HttpPost("telemetry")]
     [ProducesResponseType(typeof(ProcessingResult), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ProcessingResult), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> SimulateTelemetry(
         [FromBody] TelemetryReceivedMessage message,
         CancellationToken cancellationToken)
@@ -38,29 +36,9 @@ public class SimulationController : ControllerBase
         
         if (!result.IsSuccess)
         {
-             return BadRequest(result);
+            return Problem(detail: result.Message, statusCode: StatusCodes.Status400BadRequest, title: "Falha no processamento da leitura");
         }
         
-        return Ok(result);
-    }
-
-    /// <summary>
-    /// Insere uma leitura simulada no InfluxDB para testar conexão.
-    /// </summary>
-    /// <param name="cancellationToken">Token para cancelamento da operação.</param>
-    /// <returns>Resultado da inserção de leitura simulada.</returns>
-    [HttpGet("influx-test")]
-    [ProducesResponseType(typeof(ProcessingResult), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ProcessingResult), StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> TestInfluxConnection(CancellationToken cancellationToken)
-    {
-        ProcessingResult result = await _useCase.InsertMockReadingAsync(cancellationToken);
-
-        if (!result.IsSuccess)
-        {
-            return BadRequest(result);
-        }
-
         return Ok(result);
     }
 }

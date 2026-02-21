@@ -31,9 +31,9 @@ public static class CognitoUserAuthenticationExtensions
         IConfiguration configuration)
     {
         // Lê configurações do Cognito do appsettings.json
-        var region = configuration["COGNITO_REGION"];
-        var userPoolId = configuration["COGNITO_USER_POOL_ID"];
-        var clientId = configuration["COGNITO_CLIENT_ID"];
+        var region = configuration["COGNITO_REGION"] ?? string.Empty;
+        var userPoolId = configuration["COGNITO_USER_POOL_ID"] ?? string.Empty;
+        var clientId = configuration["COGNITO_CLIENT_ID"] ?? string.Empty;
 
         // Authority = URL do Cognito que emite os tokens (issuer)
         // O middleware usa essa URL para buscar as chaves públicas e validar assinaturas
@@ -55,15 +55,11 @@ public static class CognitoUserAuthenticationExtensions
                     ClockSkew = TimeSpan.FromMinutes(2)
                 };
 
-                // Validações customizadas após o token ser decodificado e assinatura verificada
                 options.Events = new JwtBearerEvents
                 {
                     OnTokenValidated = ctx =>
                     {
-                        // Cognito emite 2 tipos de token: "access" e "id"
-                        // Access token = autorização para acessar recursos
-                        // ID token = informações do usuário (nome, email, etc)
-                        // Para APIs, sempre usamos access token
+                        // Apenas access tokens são válidos para a API
                         var tokenUse = ctx.Principal?.FindFirst("token_use")?.Value;
                         if (!string.Equals(tokenUse, "access", StringComparison.Ordinal))
                         {
@@ -71,8 +67,7 @@ public static class CognitoUserAuthenticationExtensions
                             return Task.CompletedTask;
                         }
 
-                        // Valida que o token foi emitido pelo App Client correto
-                        // Evita que tokens de outros apps do mesmo User Pool sejam aceitos
+                        // Rejeita tokens de outros app clients
                         var clientIdClaim = ctx.Principal?.FindFirst("client_id")?.Value;
                         if (!string.Equals(clientIdClaim, clientId, StringComparison.Ordinal))
                         {
@@ -85,9 +80,7 @@ public static class CognitoUserAuthenticationExtensions
                 };
             });
 
-        // FallbackPolicy = política aplicada a TODOS os endpoints que não têm [Authorize] explícito
-        // RequireAuthenticatedUser = exige token válido em todas as rotas por padrão
-        // Para liberar um endpoint, use [AllowAnonymous]
+        // Todos os endpoints exigem autenticação por padrão
         services.AddAuthorization(options =>
         {
             options.FallbackPolicy = new AuthorizationPolicyBuilder()

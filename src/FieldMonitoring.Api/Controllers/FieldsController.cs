@@ -13,6 +13,8 @@ namespace FieldMonitoring.Api.Controllers;
 [Route("monitoring/[controller]")]
 public class FieldsController : ControllerBase
 {
+    private static readonly TimeSpan DefaultHistoryWindow = TimeSpan.FromDays(1);
+
     private readonly GetFieldDetailQuery _fieldDetailQuery;
     private readonly GetFieldHistoryQuery _fieldHistoryQuery;
     private readonly GetActiveAlertsQuery _activeAlertsQuery;
@@ -71,12 +73,12 @@ public class FieldsController : ControllerBase
         if (!QueryDateTimeOffsetParser.TryResolveRange(
                 from,
                 to,
-                TimeSpan.FromDays(1),
+                DefaultHistoryWindow,
                 out DateTimeOffset effectiveFrom,
                 out DateTimeOffset effectiveTo,
                 out string? validationMessage))
         {
-            return BadRequest(validationMessage);
+            return Problem(detail: validationMessage, statusCode: StatusCodes.Status400BadRequest, title: "Parâmetro inválido");
         }
 
         IReadOnlyList<ReadingDto> readings = await _fieldHistoryQuery.ExecuteAsync(fieldId, effectiveFrom, effectiveTo, cancellationToken);
@@ -123,7 +125,7 @@ public class FieldsController : ControllerBase
                 out DateTimeOffset? parsedTo,
                 out string? validationMessage))
         {
-            return BadRequest(validationMessage);
+            return Problem(detail: validationMessage, statusCode: StatusCodes.Status400BadRequest, title: "Parâmetro inválido");
         }
 
         IReadOnlyList<AlertDto> result = await _alertHistoryQuery.ExecuteByFieldAsync(fieldId, parsedFrom, parsedTo, cancellationToken);

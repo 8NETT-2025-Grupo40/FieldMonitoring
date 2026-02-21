@@ -1,7 +1,7 @@
 using FieldMonitoring.Infrastructure.Persistence.TimeSeries;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 
-namespace FieldMonitoring.Api.HealthChecks;
+namespace FieldMonitoring.Infrastructure.HealthChecks;
 
 internal sealed class InfluxDbReadinessHealthCheck : IHealthCheck
 {

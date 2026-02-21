@@ -19,7 +19,7 @@ public static class AlertTypeExtensions
         AlertType.Dryness => 3,      // Crítico - falta de água
         AlertType.DryAir => 4,       // Moderado - estresse hídrico
         AlertType.HumidAir => 5,     // Moderado - risco de doenças fúngicas
-        _ => 99
+        _ => throw new ArgumentOutOfRangeException(nameof(type), type, "Tipo de alerta não suportado para severidade.")
     };
 
     /// <summary>
@@ -32,11 +32,11 @@ public static class AlertTypeExtensions
         AlertType.Dryness => FieldStatusType.DryAlert,
         AlertType.DryAir => FieldStatusType.DryAirAlert,
         AlertType.HumidAir => FieldStatusType.HumidAirAlert,
-        _ => FieldStatusType.Normal
+        _ => throw new ArgumentOutOfRangeException(nameof(type), type, "Tipo de alerta não suportado para mapeamento de status.")
     };
 
     /// <summary>
-    /// Retorna uma descrição padrão para o alerta quando não há reason específica.
+    /// Retorna uma descrição padrão para o alerta quando não há razão específica.
     /// </summary>
     public static string GetDefaultReason(this AlertType type) => type switch
     {
@@ -45,6 +45,6 @@ public static class AlertTypeExtensions
         AlertType.Dryness => "Alerta de seca ativo",
         AlertType.DryAir => "Alerta de ar seco ativo",
         AlertType.HumidAir => "Alerta de ar úmido ativo",
-        _ => "Alerta ativo"
+        _ => throw new ArgumentOutOfRangeException(nameof(type), type, "Tipo de alerta não suportado para razão padrão.")
     };
 }

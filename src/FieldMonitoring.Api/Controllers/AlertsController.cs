@@ -1,5 +1,4 @@
 using FieldMonitoring.Application.Alerts;
-using FieldMonitoring.Domain.Alerts;
 using Microsoft.AspNetCore.Mvc;
 
 namespace FieldMonitoring.Api.Controllers;
@@ -11,11 +10,11 @@ namespace FieldMonitoring.Api.Controllers;
 [Route("monitoring/[controller]")]
 public class AlertsController : ControllerBase
 {
-    private readonly IAlertStore _alertStore;
+    private readonly GetAlertByIdQuery _getAlertByIdQuery;
 
-    public AlertsController(IAlertStore alertStore)
+    public AlertsController(GetAlertByIdQuery getAlertByIdQuery)
     {
-        _alertStore = alertStore;
+        _getAlertByIdQuery = getAlertByIdQuery;
     }
 
     /// <summary>
@@ -31,12 +30,7 @@ public class AlertsController : ControllerBase
         Guid alertId,
         CancellationToken cancellationToken)
     {
-        Alert? alert = await _alertStore.GetByIdAsync(alertId, cancellationToken);
-        if (alert == null)
-        {
-            return NotFound();
-        }
-        return Ok(AlertDto.FromEntity(alert));
+        AlertDto? dto = await _getAlertByIdQuery.ExecuteAsync(alertId, cancellationToken);
+        return dto is null ? NotFound() : Ok(dto);
     }
-
 }

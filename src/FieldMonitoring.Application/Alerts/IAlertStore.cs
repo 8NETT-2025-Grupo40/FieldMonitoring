@@ -44,4 +44,11 @@ public interface IAlertStore
     /// Conta alertas ativos de um talhão.
     /// </summary>
     Task<int> CountActiveByFieldAsync(string fieldId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Conta alertas ativos agrupados por talhão para uma lista de talhões.
+    /// Retorna um dicionário (fieldId → quantidade de alertas ativos).
+    /// </summary>
+    Task<IReadOnlyDictionary<string, int>> CountActiveByFieldsAsync(
+        IEnumerable<string> fieldIds, CancellationToken cancellationToken = default);
 }

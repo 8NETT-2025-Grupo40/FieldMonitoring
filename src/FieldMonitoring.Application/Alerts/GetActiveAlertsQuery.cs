@@ -21,6 +21,8 @@ public class GetActiveAlertsQuery
         string farmId,
         CancellationToken cancellationToken = default)
     {
+        ArgumentException.ThrowIfNullOrWhiteSpace(farmId);
+
         IReadOnlyList<Alert> alerts = await _alertStore.GetActiveByFarmAsync(farmId, cancellationToken);
         return alerts.Select(AlertDto.FromEntity).ToList();
     }
@@ -32,6 +34,8 @@ public class GetActiveAlertsQuery
         string fieldId,
         CancellationToken cancellationToken = default)
     {
+        ArgumentException.ThrowIfNullOrWhiteSpace(fieldId);
+
         IReadOnlyList<Alert> alerts = await _alertStore.GetActiveByFieldAsync(fieldId, cancellationToken);
         return alerts.Select(AlertDto.FromEntity).ToList();
     }

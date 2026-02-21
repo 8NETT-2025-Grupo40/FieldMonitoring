@@ -11,47 +11,27 @@ using InfluxDB.Client;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 
 namespace FieldMonitoring.Infrastructure;
 
-/// <summary>
-/// Métodos de extensão para registrar serviços da camada Infrastructure.
-/// </summary>
 public static class InfrastructureServiceCollectionExtensions
 {
-    /// <summary>
-    /// Registra serviços da camada Infrastructure (adapters, DbContext, messaging).
-    /// </summary>
     public static IServiceCollection AddInfrastructureServices(
         this IServiceCollection services,
-        IConfiguration configuration,
-        IHostEnvironment environment)
+        IConfiguration configuration)
     {
-        // Database
+        // Testes de integracao substituem o DbContext via ConfigureTestServices
+        string? connectionString = configuration.GetConnectionString("SqlServer");
+
         services.AddDbContext<FieldMonitoringDbContext>(options =>
         {
-            var connectionString = configuration.GetConnectionString("SqlServer");
             if (!string.IsNullOrWhiteSpace(connectionString))
             {
                 options.UseSqlServer(connectionString);
             }
-            else if (environment.IsDevelopment() || environment.IsEnvironment("Test"))
-            {
-                // Use in-memory database for development/testing
-                options.UseInMemoryDatabase("FieldMonitoring");
-            }
-            else
-            {
-                throw new InvalidOperationException(
-                    "Connection string 'SqlServer' não configurada para o ambiente atual.");
-            }
         });
 
-        // Repositories (DDD Aggregates)
         services.AddScoped<IFieldRepository, FieldRepository>();
-
-        // SQL Server adapters
         services.AddScoped<IAlertStore, SqlServerAlertAdapter>();
         services.AddScoped<IIdempotencyStore, SqlServerIdempotencyAdapter>();
 
@@ -79,18 +59,13 @@ public static class InfrastructureServiceCollectionExtensions
         return services;
     }
 
-    /// <summary>
-    /// Registra serviços de mensageria SQS.
-    /// </summary>
     public static IServiceCollection AddSqsMessaging(
         this IServiceCollection services,
         IConfiguration configuration)
     {
-        // Configure SQS options
         IConfigurationSection sqsSection = configuration.GetSection(SqsOptions.SectionName);
         services.Configure<SqsOptions>(sqsSection);
 
-        // Get region from configuration
         SqsOptions sqsOptions = new SqsOptions();
         sqsSection.Bind(sqsOptions);
         var region = sqsOptions.Region ?? "us-east-1";
@@ -104,7 +79,6 @@ public static class InfrastructureServiceCollectionExtensions
             return new AmazonSQSClient(config);
         });
 
-        // Register the background consumer service
         services.AddHostedService<SqsConsumerService>();
 
         return services;

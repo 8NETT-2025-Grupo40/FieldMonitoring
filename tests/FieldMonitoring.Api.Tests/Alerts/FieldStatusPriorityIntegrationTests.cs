@@ -1,6 +1,7 @@
 using System.Net.Http.Json;
 using FieldMonitoring.Application.Fields;
 using FieldMonitoring.Application.Telemetry;
+using FieldMonitoring.Domain.Fields;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace FieldMonitoring.Api.Tests.Alerts;
@@ -59,7 +60,7 @@ public class FieldStatusPriorityIntegrationTests : IClassFixture<IntegrationTest
         // Verificar que Heat foi ativado
         var heatCheck = await _client.GetAsync($"/monitoring/fields/{fieldId}");
         var fieldAfterHeat = await heatCheck.Content.ReadFromJsonAsync<FieldDetailDto>();
-        fieldAfterHeat!.Status.ToString().Should().Be("HeatAlert");
+        fieldAfterHeat!.Status.Should().Be(FieldStatusType.HeatAlert);
 
         // Agora: criar alerta de geada (temperatura cai drasticamente)
         var frostMessages = new[]
@@ -93,7 +94,7 @@ public class FieldStatusPriorityIntegrationTests : IClassFixture<IntegrationTest
 
         // Assert - Frost tem prioridade sobre Heat
         field.Should().NotBeNull();
-        field!.Status.ToString().Should().Be("FrostAlert");
+        field!.Status.Should().Be(FieldStatusType.FrostAlert);
     }
 
     [Fact]
@@ -135,7 +136,7 @@ public class FieldStatusPriorityIntegrationTests : IClassFixture<IntegrationTest
 
         // Assert - Heat tem prioridade sobre Dryness
         field.Should().NotBeNull();
-        field!.Status.ToString().Should().Be("HeatAlert");
+        field!.Status.Should().Be(FieldStatusType.HeatAlert);
     }
 
     [Fact]
@@ -175,7 +176,7 @@ public class FieldStatusPriorityIntegrationTests : IClassFixture<IntegrationTest
 
         // Assert - Dryness tem prioridade sobre DryAir
         field.Should().NotBeNull();
-        field!.Status.ToString().Should().Be("DryAlert");
+        field!.Status.Should().Be(FieldStatusType.DryAlert);
     }
 
     [Fact]
@@ -217,7 +218,7 @@ public class FieldStatusPriorityIntegrationTests : IClassFixture<IntegrationTest
 
         // Assert - DryAir é o único alerta ativo
         field.Should().NotBeNull();
-        field!.Status.ToString().Should().Be("DryAirAlert");
+        field!.Status.Should().Be(FieldStatusType.DryAirAlert);
     }
 
     [Fact]
@@ -252,7 +253,7 @@ public class FieldStatusPriorityIntegrationTests : IClassFixture<IntegrationTest
 
         // Assert - Status deve ser Normal
         field.Should().NotBeNull();
-        field!.Status.ToString().Should().Be("Normal");
+        field!.Status.Should().Be(FieldStatusType.Normal);
     }
 
     [Fact]
@@ -287,7 +288,7 @@ public class FieldStatusPriorityIntegrationTests : IClassFixture<IntegrationTest
         // Verificar que alerta foi criado
         var alertCheck = await _client.GetAsync($"/monitoring/fields/{fieldId}");
         var fieldWithAlert = await alertCheck.Content.ReadFromJsonAsync<FieldDetailDto>();
-        fieldWithAlert!.Status.ToString().Should().Be("DryAlert");
+        fieldWithAlert!.Status.Should().Be(FieldStatusType.DryAlert);
 
         // Act - Recuperar condições
         var recoveryMessage = new TelemetryMessageBuilder()
@@ -305,7 +306,7 @@ public class FieldStatusPriorityIntegrationTests : IClassFixture<IntegrationTest
         // Assert
         var response = await _client.GetAsync($"/monitoring/fields/{fieldId}");
         var field = await response.Content.ReadFromJsonAsync<FieldDetailDto>();
-        field!.Status.ToString().Should().Be("Normal");
+        field!.Status.Should().Be(FieldStatusType.Normal);
     }
 
     [Fact]
@@ -347,6 +348,6 @@ public class FieldStatusPriorityIntegrationTests : IClassFixture<IntegrationTest
 
         // Assert - HumidAir é o único alerta ativo
         field.Should().NotBeNull();
-        field!.Status.ToString().Should().Be("HumidAirAlert");
+        field!.Status.Should().Be(FieldStatusType.HumidAirAlert);
     }
 }

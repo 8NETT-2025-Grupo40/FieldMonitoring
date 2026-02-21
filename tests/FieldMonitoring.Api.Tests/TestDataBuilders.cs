@@ -1,5 +1,4 @@
 using FieldMonitoring.Application.Telemetry;
-using FieldMonitoring.Domain.Rules;
 
 namespace FieldMonitoring.Api.Tests;
 
@@ -96,48 +95,6 @@ public class TelemetryMessageBuilder
             AirHumidity = _airHumidity,
             RainMm = _rainMm,
             Source = _source
-        };
-    }
-}
-
-/// <summary>
-/// Builder para criar regras de seca para testes.
-/// </summary>
-public class RuleBuilder
-{
-    private Guid _ruleId = Guid.NewGuid();
-    private RuleType _ruleType = RuleType.Dryness;
-    private bool _isEnabled = true;
-    private double _threshold = 30.0;
-    private int _windowHours = 24;
-
-    public RuleBuilder WithThreshold(double threshold)
-    {
-        _threshold = threshold;
-        return this;
-    }
-
-    public RuleBuilder WithWindowHours(int hours)
-    {
-        _windowHours = hours;
-        return this;
-    }
-
-    public RuleBuilder Disabled()
-    {
-        _isEnabled = false;
-        return this;
-    }
-
-    public Rule Build()
-    {
-        return new Rule
-        {
-            RuleId = _ruleId,
-            RuleType = _ruleType,
-            IsEnabled = _isEnabled,
-            Threshold = _threshold,
-            WindowHours = _windowHours
         };
     }
 }

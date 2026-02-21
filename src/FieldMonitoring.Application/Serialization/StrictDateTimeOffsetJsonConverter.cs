@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Text.RegularExpressions;
 
 namespace FieldMonitoring.Application.Serialization;
 
@@ -10,7 +11,7 @@ namespace FieldMonitoring.Application.Serialization;
 /// - Requer que o valor seja uma string ISO 8601 com offset explícito (ex.: "2026-01-17T12:00:00-03:00" ou "...Z").
 /// - Lança JsonException para valores inválidos, evitando ambiguidade de fuso em query/JSON.
 /// </summary>
-public sealed class StrictDateTimeOffsetJsonConverter : JsonConverter<DateTimeOffset>
+public sealed partial class StrictDateTimeOffsetJsonConverter : JsonConverter<DateTimeOffset>
 {
     public override DateTimeOffset Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
@@ -35,7 +36,7 @@ public sealed class StrictDateTimeOffsetJsonConverter : JsonConverter<DateTimeOf
 
         // Confirma presença de offset explícito: termina com 'Z' ou tem ±HH:mm
         var normalized = value.Trim();
-        if (!normalized.EndsWith("Z", StringComparison.OrdinalIgnoreCase) && !System.Text.RegularExpressions.Regex.IsMatch(normalized, @"[+-]\d{2}:\d{2}$"))
+        if (!normalized.EndsWith("Z", StringComparison.OrdinalIgnoreCase) && !OffsetPattern().IsMatch(normalized))
         {
             throw new JsonException("O campo 'timestamp' deve incluir offset (ex.: 2026-01-17T12:00:00-03:00).");
         }
@@ -48,4 +49,7 @@ public sealed class StrictDateTimeOffsetJsonConverter : JsonConverter<DateTimeOf
         // Serializa sempre no formato "O" (round-trip ISO 8601) para preservar o offset.
         writer.WriteStringValue(value.ToString("O", CultureInfo.InvariantCulture));
     }
+
+    [GeneratedRegex(@"[+-]\d{2}:\d{2}$")]
+    private static partial Regex OffsetPattern();
 }

@@ -50,7 +50,7 @@ public sealed class InfluxAlertEventsAdapter : IAlertEventsStore
             .Field(FieldAlertId, alertEvent.AlertId.ToString())
             .Field(FieldStatus, alertEvent.Status.ToString())
             .Field(FieldActive, alertEvent.Status == Domain.Alerts.AlertStatus.Active ? 1 : 0)
-            .Timestamp(NormalizeTimestamp(alertEvent.OccurredAt), WritePrecision.Ns);
+            .Timestamp(InfluxTimestampHelper.NormalizeToUtc(alertEvent.OccurredAt), WritePrecision.Ns);
 
         if (!string.IsNullOrWhiteSpace(alertEvent.Reason))
         {
@@ -63,10 +63,5 @@ public sealed class InfluxAlertEventsAdapter : IAlertEventsStore
         }
 
         return point;
-    }
-
-    private static DateTime NormalizeTimestamp(DateTimeOffset timestamp)
-    {
-        return timestamp.UtcDateTime;
     }
 }

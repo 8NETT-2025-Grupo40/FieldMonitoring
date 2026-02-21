@@ -1,6 +1,7 @@
 using FieldMonitoring.Application.Alerts;
 using FieldMonitoring.Application.Fields;
 using FieldMonitoring.Application.Telemetry;
+using FieldMonitoring.Domain.Rules;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace FieldMonitoring.Application;
@@ -15,6 +16,8 @@ public static class ApplicationServiceCollectionExtensions
     /// </summary>
     public static IServiceCollection AddApplicationServices(this IServiceCollection services)
     {
+        services.AddSingleton<IRuleSetProvider, DefaultRuleSetProvider>();
+
         // Use Cases
         services.AddScoped<ProcessTelemetryReadingUseCase>();
 
@@ -24,6 +27,7 @@ public static class ApplicationServiceCollectionExtensions
         services.AddScoped<GetFieldHistoryQuery>();
         services.AddScoped<GetActiveAlertsQuery>();
         services.AddScoped<GetAlertHistoryQuery>();
+        services.AddScoped<GetAlertByIdQuery>();
 
         return services;
     }

@@ -49,7 +49,7 @@ public class AlertConfiguration : IEntityTypeConfiguration<Alert>
         builder.Property(x => x.CreatedAt)
             .IsRequired();
 
-        // Indexes
+        // Índices compostos para consultas frequentes
         builder.HasIndex(x => new { x.FarmId, x.Status });
         builder.HasIndex(x => new { x.FieldId, x.StartedAt });
         builder.HasIndex(x => new { x.FieldId, x.AlertType, x.Status });

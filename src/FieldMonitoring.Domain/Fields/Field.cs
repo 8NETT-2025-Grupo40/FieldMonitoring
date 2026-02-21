@@ -6,20 +6,25 @@ using FieldMonitoring.Domain.Telemetry;
 namespace FieldMonitoring.Domain.Fields;
 
 /// <summary>
-/// Aggregate Root que representa um Talhão (Field).
-/// Encapsula seu status, alertas e lógica de processamento de leituras.
-/// Garante invariantes: só 1 alerta ativo por tipo, transições de status válidas.
+/// Aggregate Root que representa um Talhao (Field).
+/// Garante invariantes: so 1 alerta ativo por tipo, transicoes de status validas.
 /// </summary>
 public class Field
 {
-    // Identificação
     public string FieldId { get; private set; }
     public string FarmId { get; private set; }
     public string? SensorId { get; private set; }
 
-    // Status atual do talhão
+    /// <summary>
+    /// Status operacional derivado dos alertas ativos.
+    /// </summary>
     public FieldStatusType Status { get; private set; } = FieldStatusType.Normal;
+
+    /// <summary>
+    /// Descrição legível do motivo do status atual.
+    /// </summary>
     public string? StatusReason { get; private set; }
+
     public DateTimeOffset? LastReadingAt { get; private set; }
     public SoilMoisture? LastSoilMoisture { get; private set; }
     public Temperature? LastSoilTemperature { get; private set; }
@@ -28,18 +33,16 @@ public class Field
     public RainMeasurement? LastRain { get; private set; }
     public DateTimeOffset UpdatedAt { get; private set; } = DateTimeOffset.UtcNow;
 
-    // Estado das regras - propriedades persistidas pelo EF Core
-    // Mantidas para compatibilidade com banco existente
+    // Timestamps de quando cada regra estava em condicao normal (persistidos pelo EF Core).
+    // Nao renomear: mapeados diretamente para colunas existentes no banco.
     public DateTimeOffset? LastTimeAboveDryThreshold { get; private set; }
     public DateTimeOffset? LastTimeBelowHeatThreshold { get; private set; }
     public DateTimeOffset? LastTimeAboveFrostThreshold { get; private set; }
     public DateTimeOffset? LastTimeAboveDryAirThreshold { get; private set; }
     public DateTimeOffset? LastTimeBelowHumidAirThreshold { get; private set; }
 
-    // Dicionário interno de alertas ativos (in-memory)
     private readonly Dictionary<AlertType, bool> _activeAlerts = new();
 
-    // Avaliadores de regras (Strategy Pattern) - compartilhados entre instâncias
     private static readonly Dictionary<RuleType, IRuleEvaluator> Evaluators = new()
     {
         [RuleType.Dryness] = new DrynessRuleEvaluator(),
@@ -49,33 +52,32 @@ public class Field
         [RuleType.HumidAir] = new HumidAirRuleEvaluator()
     };
 
-    // Coleção de alertas gerenciada pelo aggregate
-    private List<Alert> _alerts = new();
+    private readonly List<Alert> _alerts = new();
     public IReadOnlyList<Alert> Alerts => _alerts.AsReadOnly();
 
-    // Construtor privado - força uso de factory methods
     private Field(string fieldId, string farmId)
     {
-        FieldId = fieldId ?? throw new ArgumentNullException(nameof(fieldId));
-        FarmId = farmId ?? throw new ArgumentNullException(nameof(farmId));
+        ArgumentException.ThrowIfNullOrWhiteSpace(fieldId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(farmId);
+
+        FieldId = fieldId;
+        FarmId = farmId;
     }
 
-    /// <summary>
-    /// Cria um novo talhão.
-    /// </summary>
     public static Field Create(string fieldId, string farmId)
     {
         return new Field(fieldId, farmId);
     }
 
-    /// <summary>
-    /// Sincroniza o estado interno dos alertas com os alertas carregados.
-    /// Chamado pelo Repository após o EF carregar os alertas via Include.
-    /// </summary>
-    public void SyncAlertStates()
+    public void Rehydrate()
+    {
+        RebuildAlertState();
+    }
+
+    private void RebuildAlertState()
     {
         _activeAlerts.Clear();
-        
+
         foreach (var alert in _alerts.Where(a => a.Status == AlertStatus.Active))
         {
             _activeAlerts[alert.AlertType] = true;
@@ -83,23 +85,31 @@ public class Field
     }
 
     /// <summary>
-    /// Carrega alertas ativos no aggregate (usado quando não há Include do EF).
+    /// Reidrata alertas no aggregate e recalcula estado derivado.
     /// </summary>
-    public void LoadAlerts(IEnumerable<Alert> alerts)
+    public void RehydrateAlerts(IEnumerable<Alert> alerts)
     {
+        ArgumentNullException.ThrowIfNull(alerts);
+
         _alerts.Clear();
         _alerts.AddRange(alerts);
-        SyncAlertStates();
+        Rehydrate();
     }
 
     /// <summary>
-    /// Processa uma nova leitura de sensor.
-    /// Atualiza estado, avalia regras e gerencia alertas.
+    /// Processa uma nova leitura de sensor: atualiza estado, avalia regras e gerencia alertas.
+    /// Retorna false quando a leitura esta fora de ordem temporal.
     /// </summary>
-    public void ProcessReading(SensorReading reading, IReadOnlyList<Rule> rules)
+    public bool ProcessReading(SensorReading reading, IReadOnlyList<Rule> rules)
     {
         if (reading.FieldId != FieldId)
-            throw new InvalidOperationException($"Reading pertence a outro talhão: {reading.FieldId}");
+            throw new InvalidOperationException($"Leitura pertence a outro talhão: {reading.FieldId}");
+
+        if (reading.FarmId != FarmId)
+            throw new InvalidOperationException($"Leitura pertence a outra fazenda: {reading.FarmId}");
+
+        if (LastReadingAt.HasValue && reading.Timestamp < LastReadingAt.Value)
+            return false;
 
         UpdateLastReadingValues(reading);
 
@@ -116,31 +126,20 @@ public class Field
 
         ApplyContextToProperties(context);
         UpdateStatus();
+
+        return true;
     }
 
-    /// <summary>
-    /// Sobrecarga para manter compatibilidade com código existente.
-    /// </summary>
-    public void ProcessReading(SensorReading reading, Rule drynessRule)
-    {
-        ProcessReading(reading, new List<Rule> { drynessRule });
-    }
-
-    /// <summary>
-    /// Cria o contexto de avaliação a partir das propriedades atuais.
-    /// </summary>
     private RuleEvaluationContext CreateEvaluationContext()
     {
         var context = new RuleEvaluationContext();
         
-        // Popula timestamps das propriedades persistidas
         context.SetLastTimeNormal(RuleType.Dryness, LastTimeAboveDryThreshold);
         context.SetLastTimeNormal(RuleType.ExtremeHeat, LastTimeBelowHeatThreshold);
         context.SetLastTimeNormal(RuleType.Frost, LastTimeAboveFrostThreshold);
         context.SetLastTimeNormal(RuleType.DryAir, LastTimeAboveDryAirThreshold);
         context.SetLastTimeNormal(RuleType.HumidAir, LastTimeBelowHumidAirThreshold);
         
-        // Popula flags de alerta ativo
         foreach (var kvp in _activeAlerts)
         {
             context.SetAlertActive(kvp.Key, kvp.Value);
@@ -149,28 +148,20 @@ public class Field
         return context;
     }
 
-    /// <summary>
-    /// Aplica as mudanças do contexto de volta às propriedades.
-    /// </summary>
     private void ApplyContextToProperties(RuleEvaluationContext context)
     {
-        // Atualiza propriedades persistidas
         LastTimeAboveDryThreshold = context.GetLastTimeNormal(RuleType.Dryness);
         LastTimeBelowHeatThreshold = context.GetLastTimeNormal(RuleType.ExtremeHeat);
         LastTimeAboveFrostThreshold = context.GetLastTimeNormal(RuleType.Frost);
         LastTimeAboveDryAirThreshold = context.GetLastTimeNormal(RuleType.DryAir);
         LastTimeBelowHumidAirThreshold = context.GetLastTimeNormal(RuleType.HumidAir);
 
-        // Atualiza dicionário de alertas ativos
         foreach (var kvp in context.ActiveAlerts)
         {
             _activeAlerts[kvp.Key] = kvp.Value;
         }
     }
 
-    /// <summary>
-    /// Atualiza os valores da última leitura.
-    /// </summary>
     private void UpdateLastReadingValues(SensorReading reading)
     {
         SensorId = reading.SensorId;
@@ -183,9 +174,6 @@ public class Field
         UpdatedAt = DateTimeOffset.UtcNow;
     }
 
-    /// <summary>
-    /// Aplica o resultado da avaliação de uma regra.
-    /// </summary>
     private void ApplyEvaluationResult(RuleEvaluationResult result, AlertType alertType)
     {
         if (result.ShouldRaiseAlert && result.AlertReason != null)
@@ -198,10 +186,7 @@ public class Field
         }
     }
 
-    /// <summary>
-    /// Cria um novo alerta usando a factory unificada.
-    /// Garante invariante: só pode existir 1 alerta ativo por tipo.
-    /// </summary>
+    // Garante invariante: so pode existir 1 alerta ativo por tipo
     private void RaiseAlert(AlertType type, string reason)
     {
         if (_alerts.Any(a => a.AlertType == type && a.Status == AlertStatus.Active))
@@ -211,22 +196,15 @@ public class Field
         _alerts.Add(alert);
     }
 
-    /// <summary>
-    /// Resolve um alerta ativo de um tipo específico.
-    /// </summary>
     private void ResolveAlert(AlertType type)
     {
         var activeAlert = _alerts.FirstOrDefault(a => a.AlertType == type && a.Status == AlertStatus.Active);
         activeAlert?.Resolve();
     }
 
-    /// <summary>
-    /// Atualiza o status do talhão baseado nos alertas ativos.
-    /// Usa severidade do AlertType para priorizar (menor = mais crítico).
-    /// </summary>
+    // Usa severidade do AlertType para priorizar (menor = mais critico)
     private void UpdateStatus()
     {
-        // Busca o alerta ativo mais crítico (menor severidade)
         var mostCriticalAlert = _alerts
             .Where(a => a.Status == AlertStatus.Active)
             .OrderBy(a => a.AlertType.GetSeverity())

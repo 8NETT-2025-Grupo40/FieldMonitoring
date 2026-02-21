@@ -1,7 +1,6 @@
 using FieldMonitoring.Api.HealthChecks;
-using FieldMonitoring.Infrastructure.Messaging;
+using FieldMonitoring.Infrastructure.HealthChecks;
 using FieldMonitoring.Infrastructure.Persistence;
-using FieldMonitoring.Infrastructure.Persistence.TimeSeries;
 using Microsoft.Extensions.Configuration;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -24,40 +23,15 @@ public static class HealthChecksServiceCollectionExtensions
                 tags: [HealthCheckTags.Ready],
                 customTestQuery: IsDatabaseAvailableAsync);
 
-        AddOptionalReadinessChecks(builder, configuration);
+        builder.AddInfrastructureReadinessChecks(configuration);
 
         return services;
-    }
-
-    private static void AddOptionalReadinessChecks(IHealthChecksBuilder builder, IConfiguration configuration)
-    {
-        InfluxDbOptions influxOptions = InfluxDbOptions.Load(configuration);
-        if (influxOptions.Enabled)
-        {
-            builder.AddCheck<InfluxDbReadinessHealthCheck>(
-                "influxdb",
-                tags: [HealthCheckTags.Ready]);
-        }
-
-        SqsOptions sqsOptions = new();
-        configuration.GetSection(SqsOptions.SectionName).Bind(sqsOptions);
-        if (sqsOptions.Enabled)
-        {
-            builder.AddCheck<SqsReadinessHealthCheck>(
-                "sqs",
-                tags: [HealthCheckTags.Ready]);
-        }
     }
 
     private static async Task<bool> IsDatabaseAvailableAsync(
         FieldMonitoringDbContext dbContext,
         CancellationToken cancellationToken)
     {
-        if (dbContext.Database.IsInMemory())
-        {
-            return true;
-        }
-
         return await dbContext.Database.CanConnectAsync(cancellationToken);
     }
 }

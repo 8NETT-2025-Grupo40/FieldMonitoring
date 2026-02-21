@@ -8,17 +8,17 @@ public sealed record FarmOverviewDto
     /// <summary>
     /// Identificador da fazenda.
     /// </summary>
-    public string FarmId { get; set; } = string.Empty;
+    public required string FarmId { get; init; }
 
     /// <summary>
     /// Número total de talhões na fazenda.
     /// </summary>
-    public int TotalFields { get; set; }
+    public required int TotalFields { get; init; }
 
     /// <summary>
     /// Número total de alertas ativos em todos os talhões.
     /// </summary>
-    public int TotalActiveAlerts { get; set; }
+    public required int TotalActiveAlerts { get; init; }
 
     /// <summary>
     /// Visão geral de cada talhão na fazenda.

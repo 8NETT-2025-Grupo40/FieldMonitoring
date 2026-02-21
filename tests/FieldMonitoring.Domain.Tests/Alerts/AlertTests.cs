@@ -5,7 +5,7 @@ namespace FieldMonitoring.Domain.Tests.Alerts;
 public class AlertTests
 {
     [Fact]
-    public void CreateDrynessAlert_ShouldCreateActiveAlert()
+    public void Create_ShouldCreateActiveAlert()
     {
         // Arrange
         var farmId = "farm-1";
@@ -13,7 +13,7 @@ public class AlertTests
         var reason = "Soil moisture below 30% for 24 hours";
 
         // Act
-        Alert alert = Alert.CreateDrynessAlert(farmId, fieldId, reason);
+        Alert alert = Alert.Create(AlertType.Dryness, farmId, fieldId, reason);
 
         // Assert
         alert.FarmId.Should().Be(farmId);
@@ -28,7 +28,7 @@ public class AlertTests
     public void Resolve_ShouldSetStatusToResolved()
     {
         // Arrange
-        Alert alert = Alert.CreateDrynessAlert("farm-1", "field-1", "Test");
+        Alert alert = Alert.Create(AlertType.Dryness, "farm-1", "field-1", "Test");
 
         // Act
         alert.Resolve();
@@ -37,6 +37,36 @@ public class AlertTests
         alert.Status.Should().Be(AlertStatus.Resolved);
         alert.ResolvedAt.Should().NotBeNull();
         alert.ResolvedAt.Should().BeCloseTo(DateTimeOffset.UtcNow, TimeSpan.FromSeconds(1));
+    }
+
+    [Fact]
+    public void Create_WhenFarmIdIsNull_ShouldThrowException()
+    {
+        // Act
+        Action act = () => Alert.Create(AlertType.Dryness, null!, "field-1", "reason");
+
+        // Assert
+        act.Should().Throw<ArgumentNullException>();
+    }
+
+    [Fact]
+    public void Create_WhenFieldIdIsWhitespace_ShouldThrowException()
+    {
+        // Act
+        Action act = () => Alert.Create(AlertType.Dryness, "farm-1", "   ", "reason");
+
+        // Assert
+        act.Should().Throw<ArgumentException>();
+    }
+
+    [Fact]
+    public void Create_WhenReasonIsWhitespace_ShouldThrowException()
+    {
+        // Act
+        Action act = () => Alert.Create(AlertType.Dryness, "farm-1", "field-1", "   ");
+
+        // Assert
+        act.Should().Throw<ArgumentException>();
     }
 
 }

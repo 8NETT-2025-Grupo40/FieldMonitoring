@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Text;
 using FieldMonitoring.Application.Telemetry;
+using FieldMonitoring.Domain;
 using FieldMonitoring.Domain.Telemetry;
 using InfluxDB.Client;
 using InfluxDB.Client.Api.Domain;
@@ -97,7 +98,7 @@ public sealed class InfluxTimeSeriesAdapter : ITimeSeriesReadingsStore
             .Field(FieldSoilHumidity, reading.SoilMoisture.Percent)
             .Field(FieldSoilTemperature, reading.SoilTemperature.Celsius)
             .Field(FieldRainMm, reading.Rain.Millimeters)
-            .Timestamp(NormalizeTimestamp(reading.Timestamp), WritePrecision.Ns);
+            .Timestamp(InfluxTimestampHelper.NormalizeToUtc(reading.Timestamp), WritePrecision.Ns);
 
         if (reading.AirTemperature != null)
         {
@@ -114,8 +115,8 @@ public sealed class InfluxTimeSeriesAdapter : ITimeSeriesReadingsStore
 
     private string BuildQuery(string fieldId, DateTimeOffset from, DateTimeOffset to)
     {
-        DateTime start = NormalizeTimestamp(from);
-        DateTime stop = NormalizeTimestamp(to);
+        DateTime start = InfluxTimestampHelper.NormalizeToUtc(from);
+        DateTime stop = InfluxTimestampHelper.NormalizeToUtc(to);
         if (start > stop)
         {
             (start, stop) = (stop, start);
@@ -215,32 +216,12 @@ public sealed class InfluxTimeSeriesAdapter : ITimeSeriesReadingsStore
 
         return value switch
         {
-            DateTime dateTime => NormalizeTimestamp(dateTime),
+            DateTime dateTime => InfluxTimestampHelper.NormalizeToUtc(dateTime),
             DateTimeOffset dateTimeOffset => dateTimeOffset.ToUniversalTime(),
             Instant instant => new DateTimeOffset(instant.ToDateTimeUtc(), TimeSpan.Zero),
             string text when DateTimeOffset.TryParse(text, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal, out DateTimeOffset parsed) => parsed,
             _ => null
         };
-    }
-
-    private static DateTime NormalizeTimestamp(DateTimeOffset timestamp)
-    {
-        return timestamp.UtcDateTime;
-    }
-
-    private static DateTimeOffset NormalizeTimestamp(DateTime timestamp)
-    {
-        if (timestamp.Kind == DateTimeKind.Utc)
-        {
-            return new DateTimeOffset(timestamp, TimeSpan.Zero);
-        }
-
-        if (timestamp.Kind == DateTimeKind.Local)
-        {
-            return new DateTimeOffset(timestamp.ToUniversalTime(), TimeSpan.Zero);
-        }
-
-        return new DateTimeOffset(DateTime.SpecifyKind(timestamp, DateTimeKind.Utc));
     }
 
     private static double? GetDoubleValue(FluxRecord record, string key)
